@@ -60,6 +60,7 @@ func (a *Applier) Run(ctx context.Context) (int, error) {
 		{"event targets", a.actions},
 		{"sync machine users", a.machines},
 		{"test users", a.testUsers},
+		{"reader self-service", a.ReaderSelfService},
 	}
 	for _, s := range steps {
 		if err := s.fn(ctx); err != nil {
@@ -75,6 +76,13 @@ func (a *Applier) Run(ctx context.Context) (int, error) {
 		return a.changes, err
 	}
 	return a.changes, nil
+}
+
+// RunReaders applies only the reader self-service step, for running on a
+// schedule between full runs.
+func (a *Applier) RunReaders(ctx context.Context) (int, error) {
+	err := a.ReaderSelfService(ctx)
+	return a.changes, err
 }
 
 func (a *Applier) changed(format string, args ...any) {

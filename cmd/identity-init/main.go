@@ -32,10 +32,14 @@ func run() error {
 	outDir := flag.String("out", "", "directory for state.json and the env files")
 	apiURL := flag.String("api", "", "where to send requests (default: the issuer); the Host header stays the issuer's host")
 	wait := flag.Duration("wait", 2*time.Minute, "how long to wait for the instance to become ready")
+	only := flag.String("only", "", `run a single step: "readers" grants new readers the self-deletion role`)
 	flag.Parse()
-	if *cfgPath == "" || *outDir == "" {
+	if *cfgPath == "" || (*outDir == "" && *only == "") {
 		flag.Usage()
 		return fmt.Errorf("-config and -out are required")
+	}
+	if *only != "" && *only != "readers" {
+		return fmt.Errorf("unknown step %q", *only)
 	}
 
 	cfg, err := config.Load(*cfgPath)
@@ -69,8 +73,17 @@ func run() error {
 		return err
 	}
 
+	applier := apply.New(cfg, client, *outDir, os.Stdout)
+	if *only == "readers" {
+		n, err := applier.RunReaders(ctx)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%d readers updated\n", n)
+		return nil
+	}
 	fmt.Printf("applying %s to %s\n", *cfgPath, cfg.Issuer)
-	n, err := apply.New(cfg, client, *outDir, os.Stdout).Run(ctx)
+	n, err := applier.Run(ctx)
 	if err != nil {
 		return err
 	}

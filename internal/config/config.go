@@ -32,13 +32,16 @@ type Config struct {
 	Messages           []Message          `yaml:"messages"`
 	// LoginTexts overrides login UI strings per locale, keyed like the
 	// login app's locales/*.json.
-	LoginTexts map[string]map[string]any `yaml:"loginTexts"`
-	Apps               []App              `yaml:"apps"`
-	Events             []string           `yaml:"events"`
-	SyncRole           string             `yaml:"syncRole"`
-	SyncTokenLifetime  Duration           `yaml:"syncTokenLifetime"`
-	IdPs               IdPs               `yaml:"idps"`
-	TestUsers          []TestUser         `yaml:"testUsers"`
+	LoginTexts        map[string]map[string]any `yaml:"loginTexts"`
+	Apps              []App                     `yaml:"apps"`
+	Events            []string                  `yaml:"events"`
+	SyncRole          string                    `yaml:"syncRole"`
+	SyncTokenLifetime Duration                  `yaml:"syncTokenLifetime"`
+	IdPs              IdPs                      `yaml:"idps"`
+	TestUsers         []TestUser                `yaml:"testUsers"`
+	// ReaderSelfDeletion grants every reader the role that lets them delete
+	// their own account.
+	ReaderSelfDeletion bool `yaml:"readerSelfDeletion"`
 
 	// dir is the directory of the loaded file; asset paths are relative to
 	// the repository root, which is its parent.

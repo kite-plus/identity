@@ -76,6 +76,11 @@ branding:
   icon: branding/favicon.svg
   iconDark: branding/logo-dark.svg
 
+# R6: readers can delete their own account (console "users/me" or the API).
+# New sign-ups get the role on the next run; production runs
+# `identity-init -only readers` every few minutes (docs/runbooks).
+readerSelfDeletion: true
+
 # User events pushed to every app's webhook (R5).
 events:
   - user.removed
