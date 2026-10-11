@@ -132,11 +132,11 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
   - PostgreSQL 17：身份服务自己的容器，独占一个库和一个角色。评论服务、Explore 各用自己的 PostgreSQL 容器。
 - **资源**：本机演练空闲时，生产一套约 360 MB，预发布约 240 MB，评论服务一套约 50 MB（空库），边缘 Caddy 约 50 MB `[EV]`。按峰值留余量：生产身份服务 2 GB（ZITADEL 自己建议至少 2 GB 内存，密码哈希会让 CPU 和内存短时冲高），预发布启动时 1 GB，评论服务生产和预发布共 1 GB，Explore 连同 Caddy 1 GB，合计 5 GB，7.9 GB 里还剩约 3 GB 给系统和文件缓存。暂不设容器内存上限，先看监控。备份每份不到 1 MB，30 天的量可以忽略。
 - **Cloudflare**：`id`、`id-staging`（以及评论服务的 `comments`、`comments-staging`）的 DNS 记录都开代理，和 `explore` 一样。要注意的设置：
-  - SSL/TLS 模式用 Full (strict)。不能用 Flexible：Cloudflare 会用 http 回源，Caddy 再跳回 https，死循环。
+  - SSL/TLS 模式用 Full (strict)。不能用 Flexible：Cloudflare 会用 http 回源，Caddy 再跳回 https，死循环。2026-10-11 已对整个 `kite.plus` 区域设好；切换前核对过，Explore 的源站证书有效，`s3`（R2）和 `www`、根域名（Worker）不受影响。
   - 第一次签发证书走 HTTP-01：Let's Encrypt 经 Cloudflare 用 http 访问 `/.well-known/acme-challenge/`。Always Use HTTPS 对这些主机名生效时，这个请求会被跳到 https，而 Caddy 那时还没有证书，签发失败；照 `explore` 当初签证书时的设置做，或者用 Configuration Rule 对 `/.well-known/acme-challenge/*` 关掉它。不要为了签证书把记录临时改成仅 DNS：解析历史会留下源站地址。
   - **预发布用一级子域**（2026-10-11 定）：免费的 Universal SSL 只覆盖 `kite.plus` 和 `*.kite.plus`，`id.staging.kite.plus` 这样的二级子域开代理后，Cloudflare 边缘没有它的证书，浏览器连不上。所以预发布用一级子域 `id-staging.kite.plus`、`comments-staging.kite.plus`、`explore-staging.kite.plus`，不为预发布买 Advanced Certificate Manager。
   - 缓存保持默认（只按扩展名缓存静态文件，遵守源站的 `Cache-Control`），不对这些主机名加 Cache Everything 一类的规则：登录页、令牌和发现文档不能被缓存。评论服务另有说明（[comments architecture.md §9](https://github.com/kite-plus/comments/blob/main/docs/design/architecture.md#9-部署与运维)）。
-  - Email Address Obfuscation（Cloudflare 默认开）和 Rocket Loader 会改写 HTML、插入 Cloudflare 自己的脚本：登录界面和账号页上满是邮箱地址，评论的 iframe 和控制台只允许自己的脚本，iframe 还要求 Trusted Types。用 Configuration Rules 对这几个主机名关掉，上线前在浏览器里看一遍登录页和评论组件。
+  - Email Address Obfuscation（Cloudflare 默认开）和 Rocket Loader 会改写 HTML、插入 Cloudflare 自己的脚本：登录界面和账号页上满是邮箱地址，评论的 iframe 和控制台只允许自己的脚本，iframe 还要求 Trusted Types。2026-10-11 起整个区域都关掉了 Email Address Obfuscation，Rocket Loader 本来就关着；上线前仍在浏览器里看一遍登录页和评论组件。
   - 服务之间的调用也经过 Cloudflare（见上文「入口」），Bot Fight Mode、Under Attack 和会弹质询的 WAF 规则会把它们挡掉，不要对这几个主机名开。
   - 不需要 WebSocket，也不需要开 gRPC：初始化工具和各应用用 ZITADEL 的 REST 接口，nginx 也只按 HTTP/1.1 转发。
 - **发信**：SMTP 服务商 `[待定]`；发件人 `Kite Plus 账号 <noreply@kite.plus>`；`kite.plus` 配好 SPF、DKIM 和 DMARC，否则 QQ 邮箱、163 邮箱很可能直接拒收。
