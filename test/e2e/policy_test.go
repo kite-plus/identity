@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"context"
 	"net/http"
 	"testing"
 )
@@ -21,7 +22,7 @@ func TestNoPasswordLockout(t *testing.T) {
 		"password": obj{"password": "right-" + randomString(6), "changeRequired": false},
 	})
 	id := str(u, "userId")
-	t.Cleanup(func() { _ = s.admin.Call(t.Context(), http.MethodDelete, "/v2/users/"+id, "", nil, nil) })
+	t.Cleanup(func() { _ = s.admin.Call(context.Background(), http.MethodDelete, "/v2/users/"+id, "", nil, nil) })
 	for range 12 {
 		err := s.login.Call(ctx, http.MethodPost, "/v2/sessions", "", obj{
 			"checks": obj{"user": obj{"userId": id}, "password": obj{"password": "wrong"}},

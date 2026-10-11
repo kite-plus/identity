@@ -3,6 +3,7 @@
 package e2e
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"testing"
@@ -36,7 +37,7 @@ func TestReaderSelfDeletion(t *testing.T) {
 		"password":     obj{"password": password, "changeRequired": false},
 	})
 	userID := str(user, "userId")
-	t.Cleanup(func() { _ = s.admin.Call(t.Context(), http.MethodDelete, "/v2/users/"+userID, "", nil, nil) })
+	t.Cleanup(func() { _ = s.admin.Call(context.Background(), http.MethodDelete, "/v2/users/"+userID, "", nil, nil) })
 
 	cfg, err := config.Load("../../config/dev.yaml")
 	if err != nil {
