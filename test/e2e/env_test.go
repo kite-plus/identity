@@ -7,6 +7,7 @@ package e2e
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -18,7 +19,9 @@ import (
 	"github.com/kite-plus/identity/internal/zitadel"
 )
 
-const outDir = "../../dev/out"
+// outDir holds the env files written by identity-init; E2E_OUT_DIR points
+// the tests at another stack, e.g. one restored in a drill.
+var outDir = cmp.Or(os.Getenv("E2E_OUT_DIR"), "../../dev/out")
 
 type appEnv struct {
 	key          string
