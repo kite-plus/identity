@@ -122,7 +122,7 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 | 是否提供 Google 登录 | [architecture.md §2](architecture.md#2-登录方式) | I1 |
 | ~~服务商、线路和机器配置~~ | [architecture.md §4](architecture.md#4-部署) | 2026-10-11 定：与 Explore 同机的美国 RackNerd 服务器，共用 Explore 的 Caddy；以后迁香港是恢复备份加改 DNS |
 | ~~预发布的二级子域：买 Cloudflare Advanced Certificate Manager，还是改成一级子域~~ | [architecture.md §4](architecture.md#4-部署) | 2026-10-11 定：一级子域 `id-staging`、`comments-staging`、`explore-staging` |
-| SMTP 服务商 | [architecture.md §4](architecture.md#4-部署) | I1 开工前 |
+| ~~SMTP 服务商~~ | [architecture.md §4](architecture.md#4-部署) | 2026-10-11 定：飞书邮箱的 SMTP |
 | ~~账号锁定被滥用时的处理~~ | [architecture.md §5](architecture.md#5-运维) | 2026-10-11 定：关掉密码锁定，靠单 IP 和合计限流 |
 | 删号时撤销 Apple 令牌：ZITADEL 和 Logto 都不做。思路：一个订阅 `user.removed` 的小工具，删号时调用 Apple 的撤销接口；ZITADEL 不保存 Apple 的令牌，要先确认能从哪里拿到可撤销的令牌（比如登录时由这个小工具自己保存，或删号前让读者用 Apple 再授权一次） | [architecture.md §1.1](architecture.md#11-落实情况) 的 R11 | I1 定方案并用 Apple 开发者账号实测；Kite 应用切换到统一登录（I3）之前必须上线 |
 | 备份异地存放位置：另一个地方的服务器还是对象存储（脚本已能经 rclone 复制过去） | [architecture.md §5](architecture.md#5-运维) | I2 开工前 |

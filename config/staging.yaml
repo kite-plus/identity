@@ -10,7 +10,7 @@ smtp:
   tls: true
   user: ${SMTP_USER}
   password: ${SMTP_PASSWORD}
-  senderAddress: noreply@kite.plus
+  senderAddress: ${SMTP_FROM:-noreply@kite.plus}
   senderName: Kite Plus 账号
 
 apps:
