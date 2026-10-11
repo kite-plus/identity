@@ -12,13 +12,14 @@
    - 升级后出问题：先查 Release Notes，不行就按 [upgrade.md](upgrade.md) 回滚。
 3. 恢复后在外部探测确认 `/debug/healthz`，并在这里写一行记录。
 
-## 读者被大量锁定
+## 登录被限流或被锁
 
-ZITADEL 锁住的账号只能由管理员解锁，重置密码也不行；锁定事件会推给各应用暂停账号（[architecture.md §5](../design/architecture.md#5-运维)）。
+密码错误不再锁账号（[architecture.md §5](../design/architecture.md#5-运维)），读者登不进来多半是限流：
 
-1. 确认是不是攻击：`docker compose logs proxy | grep ' 429 '` 看限流命中；管理后台「事件」里搜 `user.human.password.check.failed`。
-2. 解锁：`curl -X POST $API/v2/users/<id>/unlock -H "Authorization: Bearer $T"`；解锁事件会推给各应用解除暂停。
-3. 持续被滥用时，在 `config/base.yaml` 调高 `lockout.maxPasswordAttempts` 或设为 0（只靠限流），跑 `identity-init`，并在 architecture.md 记下决定。
+1. `docker compose logs proxy | grep -c ' 429 '`，再看是单个 IP（`limiting requests, excess ... by zone "identity_mail"`）还是合计（`zone "identity_global"`）。
+2. 单个 IP：多半是攻击或脚本，等它停下即可；共用出口的读者（学校、公司、运营商 NAT）被误伤时，调高 `deploy/nginx/limits.conf` 里 `identity_mail` 的速率，`docker compose exec proxy nginx -s reload`。
+3. 合计限流被打满：说明正在被分布式猜密码，真实读者也会收到 429。短时间可以接受；持续时在 `limits.conf` 调高 `identity_global` 或针对攻击来源加 `deny`，事后在 architecture.md 记下调整。
+4. 账号真的被锁（`USER_STATE_LOCKED`）只会来自管理员操作，或输对密码后连续输错 10 次验证码：确认是本人后 `curl -X POST $API/v2/users/<id>/unlock -H "Authorization: Bearer $T"`。
 
 ## 凭据泄露
 

@@ -45,13 +45,13 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
 | R2 | `sub` 是实例统一的用户 ID | `[EV]` |
 | R3 | 每个应用一个机密客户端，`client_secret_basic`，带 PKCE 时强制校验；ZITADEL 没有授权确认页。每个应用单独一个 project：同一 project 里所有客户端的 ID 都会写进 ID Token 的 `aud` | `[EV]` |
 | R4 | `sid` 是 ZITADEL 的会话 ID；读者在登录界面退出、走 end_session 或会话被管理员结束时，向这次会话登录过的每个应用发 back-channel logout。**会话自然过期时不发** | `[EV]` |
-| R5 | Actions v2 把 `user.removed`、`user.deactivated`、`user.reactivated`、`user.locked`、`user.unlocked` 推给各应用，HMAC 签名。**只投递一次，失败不重试**，所以每小时对账是必需的：每个应用一个只读机器用户（`IAM_OWNER_VIEWER`），用 admin `ListEvents` 按时间游标取事件，再查用户当前状态。这个角色能读到所有推送目标的签名密钥，应用只能把推送当提示，删除或暂停前先查一次用户 | `[EV]` |
-| R6 | 注册、邮箱验证、找回密码、Passkey 在登录界面；改资料、换邮箱、Passkey 和第二因素在 `/ui/console/users/me`。读者删号需要 `ORG_USER_SELF_MANAGER` 角色，ZITADEL 默认谁都不给：`identity-init` 给每个读者授予，新注册的读者由定时任务补上（[runbooks](../runbooks/README.md)）。关联 GitHub 在用 GitHub 登录时按已验证邮箱自动关联 | `[EV]`，GitHub 部分待 I1 |
+| R5 | Actions v2 把 `user.removed`、`user.deactivated`、`user.reactivated`、`user.locked`、`user.unlocked` 推给各应用，HMAC 签名；各应用只在停用时暂停账号，锁定和解锁只作通知（密码不再触发锁定，§5）。**只投递一次，失败不重试**，所以每小时对账是必需的：每个应用一个只读机器用户（`IAM_OWNER_VIEWER`），用 admin `ListEvents` 按时间游标取事件，再查用户当前状态。这个角色能读到所有推送目标的签名密钥，应用只能把推送当提示，删除或暂停前先查一次用户 | `[EV]` |
+| R6 | 注册、邮箱验证、找回密码、Passkey 在登录界面；账号页是 ZITADEL 控制台的 `/ui/console/users/me`：改资料、换邮箱、改密码、Passkey 和第二因素、删号，各应用的「管理／删除 Kite Plus 账号」都链到这里（[README](../../README.md#account-page)）。控制台用品牌设置里的 Logo 和图标，页面标题由反向代理改成 Kite Plus，配色和个别说明文字仍是 ZITADEL 的，改不了；以后是否换成自建账号页 `[待定]`（[roadmap.md §6](roadmap.md#6-待定事项)）。读者删号需要 `ORG_USER_SELF_MANAGER` 角色，ZITADEL 默认谁都不给：`identity-init` 给每个读者授予，新注册的读者由定时任务补上（[runbooks](../runbooks/README.md)）。关联 GitHub 在用 GitHub 登录时按已验证邮箱自动关联 | `[EV]`，GitHub 部分待 I1 |
 | R7 | 登录保持 30 天（密码、Passkey、GitHub 的检查有效期都是 720h），不滑动续期。登录界面 v2 的 `sessions` Cookie 不带 Max-Age，关掉浏览器就没了（[zitadel#12434](https://github.com/zitadel/zitadel/issues/12434)），反向代理用 njs 给它补上 30 天（`deploy/nginx/njs`）；上游修好后删掉这段 | `[EV]`（代理改写用模拟上游验证） |
-| R8 | 默认语言中文，允许中英文；品牌色和 Logo；邮件文案和登录界面里写着 Zitadel 的几处文字由 `config/base.yaml` 覆盖 | `[EV]`；新注册用户的语言记为 `und`，验证邮件发成了英文，I1 跟进 |
+| R8 | 默认语言中文，允许中英文；品牌色和 Logo；邮件文案和登录界面里写着 Zitadel 的几处文字由 `config/base.yaml` 覆盖。登录界面注册时不带语言，ZITADEL 记为 `und`，邮件就退回英文：反向代理在注册表单经过时记下浏览器的语言（登录界面的语言切换优先，其次 `Accept-Language`，中英文以外按中文），再由一个 Actions v2 调用目标在创建用户时填上 `preferredLanguage`，没记到的一律中文 | `[EV]`：中文浏览器注册收到中文验证邮件，切到英文的浏览器收到英文 |
 | R9 | 管理员在 Kite Plus Operators 组织里，这个组织单独的登录策略强制 MFA；读者在 Kite Plus 组织（默认组织） | 已配置，I2 实际启用 |
-| R10 | nginx 按 IP 限流：会发邮件的页面（注册、验证、密码、验证码）的表单提交每分钟 10 次，其他登录表单每分钟 60 次，OIDC 端点每分钟 300 次；页面加载不限。国内运营商 NAT 后很多人共用一个 IP，所以放得比较宽 | `[EV]` |
-| R11 | 配置已就绪（`APPLE_*` 环境变量），账号未开。**ZITADEL 不保存 Apple 的令牌，删号时也不撤销**（源码和文档都没有），撤销办法 I1 定 | 待 I1 |
+| R10 | nginx 限流，页面加载不限：每个 IP 在会发邮件或校验密码、验证码的页面（注册、验证、密码、验证码）每分钟提交 10 次，其他登录表单 60 次，OIDC 端点 300 次；所有客户端合计在注册、验证、密码、验证码页面每分钟 600 次、突发 300，挡住分布式猜密码，一批真实读者同时登录也够用。国内运营商 NAT 后很多人共用一个 IP，所以单 IP 放得比较宽。不再用账号锁定（§5）；用不到的旧登录界面 `/ui/login/` 在代理上屏蔽，绕不过限流 | `[EV]`：单 IP 第 12 次注册提交返回 429；合计限流在两个客户端之间生效（测试配置调低速率验证） |
+| R11 | 配置已就绪（`APPLE_*` 环境变量），账号未开。**ZITADEL 不保存 Apple 的令牌，删号时也不撤销**（源码和文档都没有，Logto 也不做），撤销办法 I1 定（[roadmap.md §6](roadmap.md#6-待定事项)） | 待 I1 |
 
 ---
 
@@ -116,7 +116,8 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
 - **地点**：香港，和以后的评论服务同一台服务器。不需要备案，到国内三网的延迟在可接受范围。账号是个人信息，放在境外涉及的出境规则，和评论服务一样，见 [comments architecture.md §5](https://github.com/kite-plus/comments/blob/main/docs/design/architecture.md#5-部署地与合规)。服务商和线路 `[待定]`，I1 开工前定。
 - **环境**：生产 `id.kite.plus`；预发布 `id.staging.kite.plus`，独立实例、独立数据库。每次升级先在预发布上跑。
 - **组成**（Docker Compose，`deploy/docker-compose.yaml`，版本固定在 `.env`）：
-  - 反向代理：nginx 1.30（官方镜像）。终止 TLS，证书由镜像自带的 ACME 模块向 Let's Encrypt 申请和续期（HTTP-01，要开放 80 端口）；对登录、注册、找回密码、发验证码的表单提交限流（R10，§1.1）；用 njs 给登录界面的 Cookie 补 Max-Age（R7）；清掉客户端伪造的 `X-Forwarded-Host`、`X-Zitadel-*` 头，ZITADEL 会用它们拼 issuer 和邮件里的链接。选 nginx 不选 Caddy：限流、njs、ACME 都在官方镜像里，不用自己编译插件 `[EV]`。
+  - 反向代理：nginx 1.30（官方镜像）。终止 TLS，证书由镜像自带的 ACME 模块向 Let's Encrypt 申请和续期（HTTP-01，要开放 80 端口）；对登录、注册、找回密码、发验证码的表单提交限流（R10，§1.1）；用 njs 给登录界面的 Cookie 补 Max-Age（R7），并为新读者设语言（R8：内部端口 8082 上的调用目标，只对 Compose 网络开放）；改写控制台的页面标题（R6）；清掉客户端伪造的 `X-Forwarded-Host`、`X-Zitadel-*` 头，ZITADEL 会用它们拼 issuer 和邮件里的链接。选 nginx 不选 Caddy：限流、njs、ACME 都在官方镜像里，不用自己编译插件 `[EV]`。
+  - 网络：Compose 网络固定为 `172.31.250.0/24`、关掉 IPv6。ZITADEL 对外请求保留默认的内网拒绝列表，只放行这个网段，让语言调用目标够得着代理 `[EV]`。
   - 身份服务：ZITADEL v4.19.4，接口和登录界面两个容器，两个镜像版本必须一致。`zitadel-init`（建库建角色，只有它拿到 PostgreSQL 超级用户密码）和 `zitadel-setup`（迁移、首次建实例）是一次性容器，每次启动都先跑。
   - PostgreSQL 17：身份服务独占一个库和一个角色。以后评论服务上同一台机器，用另外的库和角色。
 - **资源**：只跑身份服务时 2 核 4 GB 起步（ZITADEL 自己建议至少 2 GB 内存，密码哈希会让 CPU 短时冲高；本机空闲时整套约 350 MB `[EV]`）；评论服务加入后再扩 `[待定]`。
@@ -136,7 +137,7 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
 - **升级**：订阅身份服务的安全公告。**严重漏洞 72 小时内升级到生产，其余随每月一次的例行升级**；都先在预发布环境升级。本组织所有提到身份服务升级时限的地方都以这一条为准。
 - **备份**：每天 `scripts/backup.sh`：`pg_dump` 身份服务的库连同引导令牌，用 age 公钥加密，保存 30 天并异地复制（存放位置 `[待定]`，I2 前定）；主密钥不进备份。每个阶段结束做一次恢复到空机器的演练（[restore.md](../runbooks/restore.md)，2026-10-11 本机演练过一次 `[EV]`）。
 - **监控**：外部探测 `/healthz`，探测点包括国内三网；对登录失败率、发信失败、证书到期、磁盘和备份结果设告警。
-- **防滥用**：反向代理限流（§4）；开启账号锁定（密码或验证码连续错 10 次）；登录失败的延迟保持默认。ZITADEL 锁住的账号只能由管理员解锁，重置密码也解不开，锁定事件还会推给各应用暂停账号 `[EV]`：知道读者邮箱的人连输 10 次错密码就能锁住他。I1 观察是否被滥用，解锁步骤见 [incident.md](../runbooks/incident.md)；被滥用时调高次数或关掉密码锁定，只靠限流 `[待定]`。
+- **防滥用**：反向代理限流（§4，§1.1 R10）；登录失败的延迟保持默认。**不开密码锁定**：ZITADEL 锁住的账号只能由管理员解锁，重置密码也解不开 `[EV]`，开着的话，知道读者邮箱的人连输几次错密码就能把他锁在外面。一次性验证码的锁定保留（连续错 10 次），它要先输对密码才会出现。ZITADEL 没有按账号的节流，合计限流是猜密码的上限；合计限流被打满时真实读者也会收到 429，见 [incident.md](../runbooks/incident.md)。
 - **定时任务**：每天备份；每 5 分钟 `identity-init -only readers`，给新注册的读者授予自助删号的角色（§1.1 R6）。
 - **管理员**：平台管理员账号强制 MFA；日常不用管理员账号登录各应用。
 - **隐私政策和服务条款**：账号存着邮箱等个人信息，生产上线（I2）前必须有，中英文。

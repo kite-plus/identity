@@ -20,7 +20,7 @@
    ```
 
    脚本先拉镜像、做一次备份，再改 `.env` 里的版本、`docker compose up -d --wait`（`zitadel-setup` 自动跑迁移），最后检查 issuer 和 `/debug/ready`。
-3. 验证：浏览器里登录一次 Explore 预发布和评论预发布；在管理后台停用再启用一个测试账号，确认两边收到事件；`bin/identity-init ... -config config/staging.yaml` 应输出 no changes。
+3. 验证：浏览器里登录一次 Explore 预发布和评论预发布；注册一个测试账号，验证邮件是中文（语言调用目标还认得新版本的请求格式）；在管理后台停用再启用一个测试账号，确认两边收到事件；`bin/identity-init ... -config config/staging.yaml` 应输出 no changes。新版本若改了登录界面创建用户的接口（目前是 `AddHumanUser`），语言调用目标要跟着改。
 4. 生产：同样的步骤，在访问量低的时候做。期间有十几秒登录不可用，已登录的应用不受影响。
 5. 在下面的记录表里写一行。
 

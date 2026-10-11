@@ -49,7 +49,7 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 - `deploy/`（Compose、nginx、`.env.example`）、`config/`（dev、staging、production）、`scripts/`（备份、恢复、升级）、`cmd/identity-init`，按 [architecture.md §6](architecture.md#6-仓库结构)。
 - 本地开发栈 `identity-dev` 和端到端检查 `make dev-test`：代码流程、`sid`、back-channel logout、事件推送和查询、读者自助删号，Explore 和评论服务按 [README](../../README.md#contract-for-kite-plus-services) 的约定对接。
 - 生产 Compose 在本机起过一次：issuer、HTTP 跳转、初始化工具对 staging 配置连跑两遍（第二遍无改动）都正常；ACME 申请证书没法在本机验证。
-- 限流（第 12 次注册提交返回 429）、账号锁定、恢复演练（[restore.md](../runbooks/restore.md)）、小版本升级演练（v4.18.0 → v4.19.4，约 11 秒不可用）。
+- 限流（单 IP 第 12 次注册提交返回 429，合计限流跨客户端生效）、关闭密码锁定、新读者按浏览器语言收到中文或英文邮件、恢复演练（[restore.md](../runbooks/restore.md)）、小版本升级演练（v4.18.0 → v4.19.4，约 11 秒不可用）。
 - 运维手册初稿：[runbooks](../runbooks/README.md)。
 
 **范围**：
@@ -116,7 +116,8 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 | 是否提供 Google 登录 | [architecture.md §2](architecture.md#2-登录方式) | I1 |
 | 服务商、线路和机器配置 | [architecture.md §4](architecture.md#4-部署) | I1 开工前 |
 | SMTP 服务商 | [architecture.md §4](architecture.md#4-部署) | I1 开工前 |
-| 删号时撤销 Apple 令牌的办法（ZITADEL 不做） | [architecture.md §1.1](architecture.md#11-落实情况) 的 R11 | I1，有 Apple 开发者账号后 |
-| 账号锁定被滥用时的处理 | [architecture.md §5](architecture.md#5-运维) | I1 观察后 |
+| ~~账号锁定被滥用时的处理~~ | [architecture.md §5](architecture.md#5-运维) | 2026-10-11 定：关掉密码锁定，靠单 IP 和合计限流 |
+| 删号时撤销 Apple 令牌：ZITADEL 和 Logto 都不做。思路：一个订阅 `user.removed` 的小工具，删号时调用 Apple 的撤销接口；ZITADEL 不保存 Apple 的令牌，要先确认能从哪里拿到可撤销的令牌（比如登录时由这个小工具自己保存，或删号前让读者用 Apple 再授权一次） | [architecture.md §1.1](architecture.md#11-落实情况) 的 R11 | I1 定方案并用 Apple 开发者账号实测；Kite 应用切换到统一登录（I3）之前必须上线 |
 | 备份异地存放位置 | [architecture.md §5](architecture.md#5-运维) | I2 开工前 |
+| 账号页是否换成自建页面：现在用 ZITADEL 控制台的 `/ui/console/users/me`，配色和个别说明文字改不了 | [architecture.md §1.1](architecture.md#11-落实情况) 的 R6 | Kite 应用的「删除 Kite Plus 账号」入口上线（I3）之前评估；读者反馈难用时提前 |
 | Explore 过渡期的截止时间 | [Explore accounts.md §1](https://github.com/kite-plus/explore/blob/main/docs/design/accounts.md#1-登录与会话) | I3 开工前 |

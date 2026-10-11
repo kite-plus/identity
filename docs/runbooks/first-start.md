@@ -51,7 +51,11 @@
 
    第一条让新注册的读者能自助删号（architecture.md §1.1 R6），第二条是每日备份，异地复制按 I2 定的存放位置另配。
 
-6. 验收：在浏览器里走一遍注册、验证邮件、登录、退出；`curl -X POST https://<域名>/ui/v2/login/register` 连发 12 次，第 12 次应为 429；外部探测 `https://<域名>/debug/healthz`。
+6. 验收：
+   - 在中文浏览器里走一遍注册，验证邮件应为中文；把登录界面切到 English 再注册一个，邮件应为英文（新读者的语言，architecture.md §1.1 R8）。
+   - 登录、退出；5 分钟后在 `https://<域名>/ui/console/users/me` 能看到「删除账户」，标题是 Kite Plus。
+   - `curl -X POST https://<域名>/ui/v2/login/register` 连发 12 次，第 12 次应为 429；`https://<域名>/ui/login/loginname` 应为 404。
+   - 外部探测 `https://<域名>/debug/healthz`。
 
 ## 记录
 
