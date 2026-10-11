@@ -4,7 +4,7 @@ The shared sign-in for every Kite Plus service, served at `id.kite.plus`.
 
 It is a self-hosted open-source identity provider (OIDC), [ZITADEL](https://zitadel.com) v4 with its login v2 UI, deployed unmodified. This repository holds only what it takes to run it: deployment files, the repeatable setup tool, backups, runbooks, branding and email texts.
 
-There is no public deployment yet; staging and production wait for a server, DNS and mail accounts. Everything else runs locally. The design, written in Chinese like the other Kite Plus projects, is in [docs/design](docs/design/README.md). Start with [architecture.md](docs/design/architecture.md) and the milestones in [roadmap.md](docs/design/roadmap.md). Operations are in [docs/runbooks](docs/runbooks/README.md).
+There is no public deployment yet; staging and production will run on the US server that already hosts Explore, and wait for DNS records and mail accounts. Everything else runs locally. The design, written in Chinese like the other Kite Plus projects, is in [docs/design](docs/design/README.md). Start with [architecture.md](docs/design/architecture.md) and the milestones in [roadmap.md](docs/design/roadmap.md). Operations are in [docs/runbooks](docs/runbooks/README.md).
 
 ## Layout
 
@@ -13,7 +13,7 @@ There is no public deployment yet; staging and production wait for a server, DNS
 | `config/` | Declarative instance settings: `base.yaml` plus one file per environment (`dev`, `staging`, `production`) |
 | `cmd/identity-init` | Applies `config/` to an instance through the ZITADEL API; safe to re-run |
 | `dev/` | The local stack (`identity-dev` compose project) |
-| `deploy/` | Production compose file, nginx config, `.env.example` |
+| `deploy/` | Compose files for staging and production (standalone and edge mode), nginx config, Caddy site files for the edge, `.env.example` |
 | `scripts/` | Backup, restore, upgrade, dev helpers |
 | `test/e2e` | Browser-free end-to-end checks against the local stack |
 | `branding/` | Logos used on the login pages and in mails |
@@ -170,4 +170,8 @@ curl -s "$EXPLORE_OIDC_ISSUER/v2/users/$SUB" -H "Authorization: Bearer $EXPLORE_
 
 ## Deployment
 
-Production and staging run `deploy/docker-compose.yaml` behind nginx; see [docs/runbooks](docs/runbooks/README.md) for first start, upgrades, backups and restores. Configuration changes go into `config/` first and are applied with `identity-init`, never clicked in the console.
+Production and staging share one server with Explore and the comment service, and Explore's Caddy is the only thing on ports 80 and 443 there. The identity service runs in **edge mode**: `deploy/docker-compose.edge.yaml`, enabled through `COMPOSE_FILE` in `deploy/.env`, takes nginx off the host ports and onto the shared `kite-edge` Docker network as `identity`; nginx speaks plain HTTP there, trusts `X-Forwarded-For` only from that network (Caddy sends the one reader address it found behind Cloudflare), and the rate limits keep counting readers. `deploy/edge/identity.caddy` and `identity-staging.caddy` are Caddy's site blocks. Staging is a second checkout and compose project on the same server, started for tests and upgrades only.
+
+On its own, `deploy/docker-compose.yaml` is the **standalone mode** for a server without a shared proxy: nginx owns ports 80 and 443 and gets its certificate through its ACME module. Both modes share the nginx rate limits, njs and routing.
+
+`scripts/backup.sh` writes an age-encrypted dump and, with `BACKUP_REMOTE` set, copies it off the server with rclone. See [docs/runbooks](docs/runbooks/README.md) for first start, upgrades, backups and restores, and [architecture.md section 4](docs/design/architecture.md#4-部署) for why it is deployed this way. Configuration changes go into `config/` first and are applied with `identity-init`, never clicked in the console.

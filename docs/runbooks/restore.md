@@ -16,7 +16,7 @@
 
 ## 恢复到一台空机器
 
-1. 按 [first-start.md](first-start.md) 准备服务器和 DNS，`deploy/.env` 里填**原来的** `ZITADEL_MASTERKEY` 和 `IDENTITY_DOMAIN`、**和备份相同的** `ZITADEL_VERSION`；数据库密码可以重新生成。
+1. 按 [first-start.md](first-start.md) 准备服务器、共用入口和 DNS，`deploy/.env` 里填**原来的** `ZITADEL_MASTERKEY` 和 `IDENTITY_DOMAIN`、**和备份相同的** `ZITADEL_VERSION`；数据库密码可以重新生成。换机器（比如以后迁到香港）也是这一套：恢复、验证，再把 DNS 指到新机器。
 2. 恢复（需要 age 私钥）：
 
    ```sh

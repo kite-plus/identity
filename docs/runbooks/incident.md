@@ -4,10 +4,11 @@
 
 ## 登录不可用
 
-1. `docker compose ps`：哪个容器不健康。`docker compose logs --tail 200 zitadel login proxy`。
+1. 在 `/opt/identity/deploy` 下 `docker compose ps`：哪个容器不健康。`docker compose logs --tail 200 zitadel login proxy`。
 2. 常见原因：
    - 数据库满盘或没起来：`df -h`，`docker compose logs db`。
-   - 证书过期或申请失败：`docker compose logs proxy | grep -i acme`；80 端口必须对外开放，DNS 指向本机。
+   - 证书过期或申请失败：边缘模式下证书归 Explore 的 Caddy，`cd /opt/explore && docker compose logs caddy | grep -i -E 'id\.kite\.plus|error'`，Cloudflare 的设置见 [architecture.md §4](../design/architecture.md#4-部署)。独立模式下 `docker compose logs proxy | grep -i acme`，80 端口必须对外开放，DNS 指向本机。
+   - 容器都健康，浏览器却是 502：Caddy 找不到上游。`docker network inspect kite-edge` 里要有身份服务的 proxy（别名 `identity`）和 Explore 的 caddy；Explore 的 `docker-compose.override.yaml` 丢了时 caddy 会掉出 kite-edge。
    - 登录界面令牌过期（`login-client.pat`）：登录页报权限错误；按 [key-rotation.md](key-rotation.md) 换新。
    - 升级后出问题：先查 Release Notes，不行就按 [upgrade.md](upgrade.md) 回滚。
 3. 恢复后在外部探测确认 `/debug/healthz`，并在这里写一行记录。
@@ -16,7 +17,7 @@
 
 密码错误不再锁账号（[architecture.md §5](../design/architecture.md#5-运维)），读者登不进来多半是限流：
 
-1. `docker compose logs proxy | grep -c ' 429 '`，再看是单个 IP（`limiting requests, excess ... by zone "identity_mail"`）还是合计（`zone "identity_global"`）。
+1. `docker compose logs proxy | grep -c ' 429 '`，再看是单个 IP（`limiting requests, excess ... by zone "identity_mail"`）还是合计（`zone "identity_global"`）。日志里的客户端要是全成了 Cloudflare 的地址或 `172.30.10.x`，是读者地址没传过来：查 Explore `.env` 的 `EXPLORE_CDN_RANGES`（Cloudflare 改过地址段）和 `sites/identity.caddy` 里的 `header_up X-Forwarded-For {client_ip}`。
 2. 单个 IP：多半是攻击或脚本，等它停下即可；共用出口的读者（学校、公司、运营商 NAT）被误伤时，调高 `deploy/nginx/limits.conf` 里 `identity_mail` 的速率，`docker compose exec proxy nginx -s reload`。
 3. 合计限流被打满：说明正在被分布式猜密码，真实读者也会收到 429。短时间可以接受；持续时在 `limits.conf` 调高 `identity_global` 或针对攻击来源加 `deny`，事后在 architecture.md 记下调整。
 4. 账号真的被锁（`USER_STATE_LOCKED`）只会来自管理员操作，或输对密码后连续输错 10 次验证码：确认是本人后 `curl -X POST $API/v2/users/<id>/unlock -H "Authorization: Bearer $T"`。

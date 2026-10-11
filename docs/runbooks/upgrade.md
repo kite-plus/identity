@@ -7,21 +7,22 @@
 - 订阅 [ZITADEL 安全公告](https://github.com/zitadel/zitadel/security/advisories) 和 [Releases](https://github.com/zitadel/zitadel/releases)（GitHub 的 Watch → Custom → Releases、Security alerts）。
 - 公告的严重级别为 critical 时，从发布时间起算 72 小时：当天在预发布上升级并验证，第二天上生产。
 - API 和登录界面两个镜像（`zitadel`、`zitadel-login`）必须同一个版本，`ZITADEL_VERSION` 一个变量管两个。
-- 一并检查 nginx、PostgreSQL 镜像的补丁版本（只升补丁号；PostgreSQL 大版本升级另做方案）。
+- 一并检查 nginx、PostgreSQL 镜像的补丁版本（只升补丁号；PostgreSQL 大版本升级另做方案）。前面的 Caddy 是 Explore 的，随 Explore 升级。
 
 ## 步骤
 
 1. 读 Release Notes，找迁移说明和不兼容改动；跨大版本（v4 → v5）先在本机用 `make dev-up` 换版本试跑，再按这里做。
-2. 预发布：
+2. 预发布（和生产同机，平时停着，先启动）：
 
    ```sh
-   cd /opt/identity && git pull
+   cd /opt/identity-staging && git pull
+   (cd deploy && docker compose up -d --wait)
    scripts/upgrade.sh v4.19.5
    ```
 
    脚本先拉镜像、做一次备份，再改 `.env` 里的版本、`docker compose up -d --wait`（`zitadel-setup` 自动跑迁移），最后检查 issuer 和 `/debug/ready`。
 3. 验证：浏览器里登录一次 Explore 预发布和评论预发布；注册一个测试账号，验证邮件是中文（语言调用目标还认得新版本的请求格式）；在管理后台停用再启用一个测试账号，确认两边收到事件；`bin/identity-init ... -config config/staging.yaml` 应输出 no changes。新版本若改了登录界面创建用户的接口（目前是 `AddHumanUser`），语言调用目标要跟着改。
-4. 生产：同样的步骤，在访问量低的时候做。期间有十几秒登录不可用，已登录的应用不受影响。
+4. 生产：`cd /opt/identity && git pull && scripts/upgrade.sh v4.19.5`，在访问量低的时候做。期间有十几秒登录不可用，已登录的应用不受影响。做完把预发布停掉：`cd /opt/identity-staging/deploy && docker compose stop`。
 5. 在下面的记录表里写一行。
 
 ## 回滚

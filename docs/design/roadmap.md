@@ -1,6 +1,6 @@
 # 路线图
 
-> 状态：I0 完成（S1、S7 随 I1）；I1 中不依赖服务器的部分已在本地完成 · 最近更新：2026-10-11
+> 状态：I0 完成（S1、S7 随 I1）；I1 中不依赖服务器的部分已在本地完成；部署地已定（与 Explore 同机），边缘模式本机演练过 · 最近更新：2026-10-11
 > 每个阶段只在退出条件全部满足后才进入下一阶段。进度如实标注。
 
 ---
@@ -10,7 +10,7 @@
 | 阶段 | 要回答的问题 | 交付 | 状态 |
 |---|---|---|---|
 | **I0 选型** | ZITADEL 还是 Logto？ | `lab/prototypes/identity-selection/` 的实测记录；结论写进 [architecture.md §3](architecture.md#3-选型) | 完成（2026-10-11）：已选 ZITADEL，S1、S7 待 I1 确认 |
-| **I1 预发布** | 在真实域名和真机上能不能用？ | `id.staging.kite.plus`；本仓库的部署和初始化脚本；Explore 预发布环境接入 | 进行中：部署文件、初始化工具、本地开发栈已完成；等服务器和账号 |
+| **I1 预发布** | 在真实域名和真机上能不能用？ | `id.staging.kite.plus`；本仓库的部署和初始化脚本；Explore 预发布环境接入 | 进行中：部署文件、初始化工具、本地开发栈已完成；部署地已定（与 Explore 同机，不用新服务器），等 DNS 和账号 |
 | **I2 生产** | 能不能稳定运行、出了事能不能恢复？ | `id.kite.plus`；恢复演练、升级演练；隐私政策和服务条款 | 未开始 |
 | **I3 Explore 上线** | 已有的 Explore 用户能不能平滑迁过来？ | Explore 生产环境用 Kite Plus 账号登录 | 未开始 |
 
@@ -42,13 +42,19 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 
 ## 3. I1 预发布
 
-**需要维护者准备的**：一台香港服务器；`id.staging.kite.plus` 的域名解析；SMTP 服务商的账号；`kite-plus` 组织下预发布用的 GitHub OAuth App；Apple 开发者账号下预发布用的 Services ID 和登录私钥；备份异地存放的位置和 age 密钥对。
+**需要维护者准备的**：不用新服务器，预发布和生产都在与 Explore 同机的美国 RackNerd 服务器上（[architecture.md §4](architecture.md#4-部署)）。
+
+- Cloudflare 上开代理的 DNS 记录：`id.staging`、`comments.staging`，以及 `explore.staging`（`identity-init` 登记客户端时要解析各应用的 back-channel logout 地址，Explore 预发布还没部署也要先有记录）；先定二级子域的证书怎么办（买 Advanced Certificate Manager，还是改成一级子域），再按 architecture.md §4 核对 Cloudflare 的其他设置。
+- SMTP 服务商的账号；`kite.plus` 的 SPF、DKIM、DMARC。
+- `kite-plus` 组织下预发布用的 GitHub OAuth App；Apple 开发者账号下预发布用的 Services ID 和登录私钥。
+- 一对 age 密钥（私钥离线）。
 
 **已在本地完成**（2026-10-11）：
 
 - `deploy/`（Compose、nginx、`.env.example`）、`config/`（dev、staging、production）、`scripts/`（备份、恢复、升级）、`cmd/identity-init`，按 [architecture.md §6](architecture.md#6-仓库结构)。
 - 本地开发栈 `identity-dev` 和端到端检查 `make dev-test`：代码流程、`sid`、back-channel logout、事件推送和查询、读者自助删号，Explore 和评论服务按 [README](../../README.md#contract-for-kite-plus-services) 的约定对接。
 - 生产 Compose 在本机起过一次：issuer、HTTP 跳转、初始化工具对 staging 配置连跑两遍（第二遍无改动）都正常；ACME 申请证书没法在本机验证。
+- 边缘模式（共用 Explore 的 Caddy）在本机按服务器的布局演练过一遍：生产和预发布两个项目、评论服务两个项目和 Explore 的 Caddy 同时运行，issuer、登录页、限流按读者计算、评论服务删 Cookie、备份的异地复制和清理都按预期（rclone 用的是本地替身，真的 rclone 没在本机跑过；[first-start.md](../runbooks/first-start.md#记录)）。
 - 限流（单 IP 第 12 次注册提交返回 429，合计限流跨客户端生效）、关闭密码锁定、新读者按浏览器语言收到中文或英文邮件、恢复演练（[restore.md](../runbooks/restore.md)）、小版本升级演练（v4.18.0 → v4.19.4，约 11 秒不可用）。
 - 运维手册初稿：[runbooks](../runbooks/README.md)。
 
@@ -63,14 +69,14 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 **退出条件**：
 
 - S1–S7 在预发布环境上全部确认；选型结论不再附带条件。
-- 从零重建一次预发布环境（新机器、空数据库、跑脚本），配置和原来一致。
+- 从零重建一次预发布环境（删掉 `identity-staging` 项目连同数据卷，空数据库，跑脚本），配置和原来一致。
 - 运维手册初稿：升级、恢复、密钥轮换。
 
 ---
 
 ## 4. I2 生产
 
-**需要维护者准备的**：`id.kite.plus` 的域名解析；生产用的 GitHub OAuth App 和 Apple Services ID；离线保存主密钥的地方；隐私政策和服务条款的最终审阅。
+**需要维护者准备的**：Cloudflare 上开代理的 `id`、`comments` 两条 DNS 记录；生产用的 GitHub OAuth App 和 Apple Services ID；离线保存主密钥的地方；备份异地存放的位置（另一个地方的服务器或对象存储，rclone 能连上的；地址不写进仓库）和它的凭据；隐私政策和服务条款的最终审阅。
 
 **范围**：
 
@@ -114,10 +120,11 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 | ~~登录保持时长~~ | [architecture.md §1.1](architecture.md#11-落实情况) 的 R7 | 2026-10-11 定：30 天 |
 | ~~反向代理用 Caddy 还是 nginx~~ | [architecture.md §4](architecture.md#4-部署) | 2026-10-11 定：nginx |
 | 是否提供 Google 登录 | [architecture.md §2](architecture.md#2-登录方式) | I1 |
-| 服务商、线路和机器配置 | [architecture.md §4](architecture.md#4-部署) | I1 开工前 |
+| ~~服务商、线路和机器配置~~ | [architecture.md §4](architecture.md#4-部署) | 2026-10-11 定：与 Explore 同机的美国 RackNerd 服务器，共用 Explore 的 Caddy；以后迁香港是恢复备份加改 DNS |
+| 预发布的二级子域：买 Cloudflare Advanced Certificate Manager，还是改成一级子域 | [architecture.md §4](architecture.md#4-部署) | I1 开工前 |
 | SMTP 服务商 | [architecture.md §4](architecture.md#4-部署) | I1 开工前 |
 | ~~账号锁定被滥用时的处理~~ | [architecture.md §5](architecture.md#5-运维) | 2026-10-11 定：关掉密码锁定，靠单 IP 和合计限流 |
 | 删号时撤销 Apple 令牌：ZITADEL 和 Logto 都不做。思路：一个订阅 `user.removed` 的小工具，删号时调用 Apple 的撤销接口；ZITADEL 不保存 Apple 的令牌，要先确认能从哪里拿到可撤销的令牌（比如登录时由这个小工具自己保存，或删号前让读者用 Apple 再授权一次） | [architecture.md §1.1](architecture.md#11-落实情况) 的 R11 | I1 定方案并用 Apple 开发者账号实测；Kite 应用切换到统一登录（I3）之前必须上线 |
-| 备份异地存放位置 | [architecture.md §5](architecture.md#5-运维) | I2 开工前 |
+| 备份异地存放位置：另一个地方的服务器还是对象存储（脚本已能经 rclone 复制过去） | [architecture.md §5](architecture.md#5-运维) | I2 开工前 |
 | 账号页是否换成自建页面：现在用 ZITADEL 控制台的 `/ui/console/users/me`，配色和个别说明文字改不了 | [architecture.md §1.1](architecture.md#11-落实情况) 的 R6 | Kite 应用的「删除 Kite Plus 账号」入口上线（I3）之前评估；读者反馈难用时提前 |
 | Explore 过渡期的截止时间 | [Explore accounts.md §1](https://github.com/kite-plus/explore/blob/main/docs/design/accounts.md#1-登录与会话) | I3 开工前 |

@@ -1,6 +1,6 @@
 # Kite Plus 账号 总体设计
 
-> 状态：I0 已完成，选定 ZITADEL（S1、S7 待 I1 确认）；本地开发环境、初始化工具和部署文件已就绪 · 最近更新：2026-10-11
+> 状态：I0 已完成，选定 ZITADEL（S1、S7 待 I1 确认）；本地开发环境、初始化工具和部署文件已就绪；部署在与 Explore 同机的服务器上，共用它的 Caddy（§4，本机演练过） · 最近更新：2026-10-11
 > 文档约定沿用 [Kite 设计文档](https://github.com/kite-plus/kite/blob/main/docs/design/README.md)：正文中文，专有名词保留英文；`[设计中]` 表示实现前还可调整，`[待定]` 表示明确推迟决策；`[EV]` 表示结论有实测或既有项目佐证。
 > 各应用怎么接入（OIDC 流程、`(iss, sub)`、本地会话）是跨项目约定，写在 [Explore identity-and-comments.md §3](https://github.com/kite-plus/explore/blob/main/docs/design/identity-and-comments.md#3-协议与数据)。本文只写身份服务本身。
 
@@ -113,14 +113,32 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
 
 ## 4. 部署
 
-- **地点**：香港，和以后的评论服务同一台服务器。不需要备案，到国内三网的延迟在可接受范围。账号是个人信息，放在境外涉及的出境规则，和评论服务一样，见 [comments architecture.md §5](https://github.com/kite-plus/comments/blob/main/docs/design/architecture.md#5-部署地与合规)。服务商和线路 `[待定]`，I1 开工前定。
-- **环境**：生产 `id.kite.plus`；预发布 `id.staging.kite.plus`，独立实例、独立数据库。每次升级先在预发布上跑。
-- **组成**（Docker Compose，`deploy/docker-compose.yaml`，版本固定在 `.env`）：
-  - 反向代理：nginx 1.30（官方镜像）。终止 TLS，证书由镜像自带的 ACME 模块向 Let's Encrypt 申请和续期（HTTP-01，要开放 80 端口）；对登录、注册、找回密码、发验证码的表单提交限流（R10，§1.1）；用 njs 给登录界面的 Cookie 补 Max-Age（R7），并为新读者设语言（R8：内部端口 8082 上的调用目标，只对 Compose 网络开放）；改写控制台的页面标题（R6）；清掉客户端伪造的 `X-Forwarded-Host`、`X-Zitadel-*` 头，ZITADEL 会用它们拼 issuer 和邮件里的链接。选 nginx 不选 Caddy：限流、njs、ACME 都在官方镜像里，不用自己编译插件 `[EV]`。
-  - 网络：Compose 网络固定为 `172.31.250.0/24`、关掉 IPv6。ZITADEL 对外请求保留默认的内网拒绝列表，只放行这个网段，让语言调用目标够得着代理 `[EV]`。
+- **地点**：与 Explore 同机的美国 RackNerd 服务器（2026-10-11 维护者决定）。这台机器 6 核、7.9 GB 内存（空闲约 7 GB）、140 GB 空闲磁盘，Explore 整套只用约 300 MB；不用另买服务器，运维集中在一处。源站藏在 Cloudflare 后面，它的地址和主机名不写进任何仓库。代价是到国内比香港慢，以 Explore 现在的访问情况为参考，I1 真机测试时一并看。账号是个人信息，放在境外涉及的出境规则和评论服务一样，见 [comments architecture.md §5](https://github.com/kite-plus/comments/blob/main/docs/design/architecture.md#5-部署地与合规)。
+- **以后迁到香港**仍然可行：issuer 是域名，不绑机器。在新机器上按 [restore.md](../runbooks/restore.md) 恢复备份（同一主密钥、同一 `IDENTITY_DOMAIN`），再把 DNS 指过去；签名密钥和客户端都在库里，各应用不用改配置。
+- **环境**：生产 `id.kite.plus`；预发布 `id.staging.kite.plus`，在同一台机器上作为第二个 Compose 项目（`identity-staging`），独立实例、独立数据库，平时停着，只在测试和升级时启动。每次升级先在预发布上跑。
+- **入口（边缘模式，生产用这个）**：一台机器上只能有一个进程占 80 和 443，这台机器上是 Explore 的 Caddy（[Explore project-layout.md §10](https://github.com/kite-plus/explore/blob/main/docs/design/project-layout.md#10-部署)）。它为机器上所有主机名终止 TLS、申请证书，身份服务的 nginx 不发布端口：
+  - 共用的 Docker 网络 `kite-edge`（172.30.10.0/24，每台服务器建一次）只连边缘 Caddy 和各服务的入口容器：身份服务的 nginx（别名 `identity`，预发布 `identity-staging`）、评论服务的 `server`。其余不共用：各服务有自己的 Compose 项目、PostgreSQL 容器和内部网络；Explore 的 worker 会抓任意外部地址，不接 kite-edge。
+  - `deploy/docker-compose.edge.yaml` 让 nginx 去掉端口、接上 kite-edge，换用 `deploy/nginx/edge.conf.template`：只说 HTTP，不做 ACME。`.env` 里的 `COMPOSE_FILE` 打开它，运维命令不变。
+  - Caddy 的站点文件是 `deploy/edge/identity.caddy`（预发布 `identity-staging.caddy`），放进 Explore 的 `sites/` 目录。
+  - 读者始终经 https 到 Caddy，所以 ZITADEL 仍是 `ExternalPort 443`、`ExternalSecure true`，nginx 转给 ZITADEL 和登录界面的 `X-Forwarded-Proto` 固定为 https，重定向用相对地址。
+  - **读者地址**：Caddy 只信任 Explore `.env` 里 `EXPLORE_CDN_RANGES` 列出的 Cloudflare 地址段，从右往左取第一个不在其中的地址作为读者，再只把这一个地址写进 `X-Forwarded-For` 交给 nginx；nginx 只在对端属于 kite-edge 网段时采用它，单 IP 限流和合计限流照常按读者计算（R10）。kite-edge 上的容器和宿主机自己（经网关 172.30.10.1）也能设这个头，所以只把自己的服务接上 kite-edge。
+  - **同机服务之间也走公网域名**：Explore 和评论服务换令牌、对账，ZITADEL 发 back-channel logout 和用户事件，都按公网域名经 Cloudflare 绕回这台机器，不走 kite-edge：issuer 和回调地址都是公网域名，ZITADEL 的拒绝列表也挡内网地址。
+  - 本机演练过一遍（2026-10-11，`*.localhost` 域名，Caddy 用内部证书）`[EV]`：经边缘拿到的 issuer 正确，登录页和控制台正常，`identity-init` 经 Caddy 连跑两遍第二遍无改动，新用户的语言调用目标照常工作；同一读者第 12 次注册提交返回 429，换一个读者不受影响，读者自己写在左边的地址和直连 Caddy 时自带的地址都不被采用；预发布和生产同时运行互不干扰。记录在 [first-start.md](../runbooks/first-start.md#记录)。
+- **独立模式**：只用 `deploy/docker-compose.yaml` 时，nginx 自己占 80 和 443，由镜像自带的 ACME 模块向 Let's Encrypt 申请和续期证书（HTTP-01，要开放 80 端口）。给没有共用入口的部署，生产不用。两种模式共用 nginx 的限流、njs 和路由（`deploy/nginx/backends.conf`、`identity-locations.conf`）。
+- **组成**（Docker Compose，版本固定在 `.env`）：
+  - 反向代理：nginx 1.30（官方镜像）。对登录、注册、找回密码、发验证码的表单提交限流（R10，§1.1）；用 njs 给登录界面的 Cookie 补 Max-Age（R7），并为新读者设语言（R8：内部端口 8082 上的调用目标，只对本项目的 Compose 网络开放）；改写控制台的页面标题（R6）；清掉客户端伪造的 `X-Forwarded-Host`、`X-Zitadel-*` 头，ZITADEL 会用它们拼 issuer 和邮件里的链接。选 nginx 不选 Caddy：限流、njs、ACME 都在官方镜像里，不用自己编译插件 `[EV]`。
+  - 网络：Compose 网络固定为 `IDENTITY_SUBNET`（生产 `172.31.250.0/24`，同机的预发布 `172.31.251.0/24`）、关掉 IPv6。ZITADEL 对外请求保留默认的内网拒绝列表，只放行 `172.31.250.0/23`，让语言调用目标够得着代理 `[EV]`；两个项目的网络由 Docker 隔开。
   - 身份服务：ZITADEL v4.19.4，接口和登录界面两个容器，两个镜像版本必须一致。`zitadel-init`（建库建角色，只有它拿到 PostgreSQL 超级用户密码）和 `zitadel-setup`（迁移、首次建实例）是一次性容器，每次启动都先跑。
-  - PostgreSQL 17：身份服务独占一个库和一个角色。以后评论服务上同一台机器，用另外的库和角色。
-- **资源**：只跑身份服务时 2 核 4 GB 起步（ZITADEL 自己建议至少 2 GB 内存，密码哈希会让 CPU 短时冲高；本机空闲时整套约 350 MB `[EV]`）；评论服务加入后再扩 `[待定]`。
+  - PostgreSQL 17：身份服务自己的容器，独占一个库和一个角色。评论服务、Explore 各用自己的 PostgreSQL 容器。
+- **资源**：本机演练空闲时，生产一套约 360 MB，预发布约 240 MB，评论服务一套约 50 MB（空库），边缘 Caddy 约 50 MB `[EV]`。按峰值留余量：生产身份服务 2 GB（ZITADEL 自己建议至少 2 GB 内存，密码哈希会让 CPU 和内存短时冲高），预发布启动时 1 GB，评论服务生产和预发布共 1 GB，Explore 连同 Caddy 1 GB，合计 5 GB，7.9 GB 里还剩约 3 GB 给系统和文件缓存。暂不设容器内存上限，先看监控。备份每份不到 1 MB，30 天的量可以忽略。
+- **Cloudflare**：`id`、`id.staging`（以及评论服务的 `comments`、`comments.staging`）的 DNS 记录都开代理，和 `explore` 一样。要注意的设置：
+  - SSL/TLS 模式用 Full (strict)。不能用 Flexible：Cloudflare 会用 http 回源，Caddy 再跳回 https，死循环。
+  - 第一次签发证书走 HTTP-01：Let's Encrypt 经 Cloudflare 用 http 访问 `/.well-known/acme-challenge/`。Always Use HTTPS 对这些主机名生效时，这个请求会被跳到 https，而 Caddy 那时还没有证书，签发失败；照 `explore` 当初签证书时的设置做，或者用 Configuration Rule 对 `/.well-known/acme-challenge/*` 关掉它。不要为了签证书把记录临时改成仅 DNS：解析历史会留下源站地址。
+  - **二级子域** `[待定]`：免费的 Universal SSL 只覆盖 `kite.plus` 和 `*.kite.plus`。`id.staging.kite.plus`、`comments.staging.kite.plus`（以及 Explore 预发布 `explore.staging.kite.plus`）开代理后，Cloudflare 边缘没有它们的证书，浏览器连不上。二选一，I1 开工前定：买 Advanced Certificate Manager 覆盖 `*.staging.kite.plus`；或者把预发布改成一级子域（如 `id-staging.kite.plus`）。预发布的 issuer 还没初始化，改名只动 `config/staging.yaml`、预发布的 `.env` 和 Caddy 站点文件里的默认名。
+  - 缓存保持默认（只按扩展名缓存静态文件，遵守源站的 `Cache-Control`），不对这些主机名加 Cache Everything 一类的规则：登录页、令牌和发现文档不能被缓存。评论服务另有说明（[comments architecture.md §9](https://github.com/kite-plus/comments/blob/main/docs/design/architecture.md#9-部署与运维)）。
+  - Email Address Obfuscation（Cloudflare 默认开）和 Rocket Loader 会改写 HTML、插入 Cloudflare 自己的脚本：登录界面和账号页上满是邮箱地址，评论的 iframe 和控制台只允许自己的脚本，iframe 还要求 Trusted Types。用 Configuration Rules 对这几个主机名关掉，上线前在浏览器里看一遍登录页和评论组件。
+  - 服务之间的调用也经过 Cloudflare（见上文「入口」），Bot Fight Mode、Under Attack 和会弹质询的 WAF 规则会把它们挡掉，不要对这几个主机名开。
+  - 不需要 WebSocket，也不需要开 gRPC：初始化工具和各应用用 ZITADEL 的 REST 接口，nginx 也只按 HTTP/1.1 转发。
 - **发信**：SMTP 服务商 `[待定]`；发件人 `Kite Plus 账号 <noreply@kite.plus>`；`kite.plus` 配好 SPF、DKIM 和 DMARC，否则 QQ 邮箱、163 邮箱很可能直接拒收。
 - **GitHub 登录**：在 `kite-plus` 组织下注册 OAuth App，生产和预发布各一个，回调指向各自的 `id` 域名。
 - **Apple 登录**：在 Apple 开发者账号下建 Services ID 和用于登录的私钥，生产和预发布各一个 Services ID，回调指向各自的 `id` 域名；`noreply@kite.plus` 所在的发信域名登记到 Apple 的邮件转发服务（§2）。
@@ -135,10 +153,10 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
 ## 5. 运维
 
 - **升级**：订阅身份服务的安全公告。**严重漏洞 72 小时内升级到生产，其余随每月一次的例行升级**；都先在预发布环境升级。本组织所有提到身份服务升级时限的地方都以这一条为准。
-- **备份**：每天 `scripts/backup.sh`：`pg_dump` 身份服务的库连同引导令牌，用 age 公钥加密，保存 30 天并异地复制（存放位置 `[待定]`，I2 前定）；主密钥不进备份。每个阶段结束做一次恢复到空机器的演练（[restore.md](../runbooks/restore.md)，2026-10-11 本机演练过一次 `[EV]`）。
-- **监控**：外部探测 `/healthz`，探测点包括国内三网；对登录失败率、发信失败、证书到期、磁盘和备份结果设告警。
+- **备份**：每天 `scripts/backup.sh`：`pg_dump` 身份服务的库连同引导令牌，用 age 公钥加密，在本机和异地各保存 30 天；主密钥不进备份。异地复制用 rclone（`.env` 的 `BACKUP_REMOTE`），另一个地方的服务器（SFTP）和对象存储都能接；存放位置 `[待定]`，I2 前定，地址不写进仓库。异地的凭据最好只能写不能删，保存期交给目的地自己的生命周期规则（`BACKUP_REMOTE_KEEP_DAYS=0`），这台机器被攻破时备份删不掉。预发布不做定时备份。每个阶段结束做一次恢复到空机器的演练（[restore.md](../runbooks/restore.md)，2026-10-11 本机演练过一次 `[EV]`）。
+- **监控**：外部探测 `/healthz`，探测点包括国内三网；对登录失败率、发信失败、证书到期（证书由 Explore 的 Caddy 续期）、磁盘和备份结果设告警。
 - **防滥用**：反向代理限流（§4，§1.1 R10）；登录失败的延迟保持默认。**不开密码锁定**：ZITADEL 锁住的账号只能由管理员解锁，重置密码也解不开 `[EV]`，开着的话，知道读者邮箱的人连输几次错密码就能把他锁在外面。一次性验证码的锁定保留（连续错 10 次），它要先输对密码才会出现。ZITADEL 没有按账号的节流，合计限流是猜密码的上限；合计限流被打满时真实读者也会收到 429，见 [incident.md](../runbooks/incident.md)。
-- **定时任务**：每天备份；每 5 分钟 `identity-init -only readers`，给新注册的读者授予自助删号的角色（§1.1 R6）。
+- **定时任务**：生产每天备份；每 5 分钟 `identity-init -only readers`，给新注册的读者授予自助删号的角色（§1.1 R6）。预发布平时停着，不跑定时任务，测试时手动跑。
 - **管理员**：平台管理员账号强制 MFA；日常不用管理员账号登录各应用。
 - **隐私政策和服务条款**：账号存着邮箱等个人信息，生产上线（I2）前必须有，中英文。
 - **故障**：身份服务停机时，已经登录的应用不受影响，因为各应用都有自己的会话；只是新登录进不来。
@@ -152,7 +170,8 @@ identity/
 ├── cmd/identity-init/   初始化工具：把 config/ 应用到实例，写出各应用的环境文件
 ├── internal/            初始化工具的实现
 ├── config/              base.yaml 加 dev、staging、production 各一份
-├── deploy/              docker-compose.yaml、nginx 配置、.env.example
+├── deploy/              docker-compose.yaml（独立模式）、docker-compose.edge.yaml（边缘模式）、
+│                        nginx 配置、edge/ 下给共用 Caddy 的站点文件、.env.example
 ├── dev/                 本地开发用的 identity-dev 栈
 ├── scripts/             备份、恢复、升级、开发辅助
 ├── test/e2e/            对本地栈的端到端检查（不用浏览器）

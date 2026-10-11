@@ -20,9 +20,11 @@
 
 | 文档 | 状态 | 最近更新 |
 |---|---|---|
-| architecture.md | 已选 ZITADEL（S1、S7 待 I1 确认）；R1–R11 的落实见 §1.1 | 2026-10-11 |
-| roadmap.md | I0 完成；I1 本地部分完成，等服务器和账号 | 2026-10-11 |
+| architecture.md | 已选 ZITADEL（S1、S7 待 I1 确认）；R1–R11 的落实见 §1.1；部署在与 Explore 同机的服务器上（§4） | 2026-10-11 |
+| roadmap.md | I0 完成；I1 本地部分完成，等 DNS 和账号 | 2026-10-11 |
 
 2026-10-10 补充：手机应用经 Explore 服务端登录，身份服务里不登记原生客户端；为 App Store 加上 Apple 登录（R11、S7）。
 
 2026-10-11：I0 实测完成，选定 ZITADEL v4.19.4；本地开发栈、初始化工具、部署文件和运维手册落地，运维手册在 [runbooks](../runbooks/README.md)。
+
+2026-10-11：部署地改为与 Explore 同机的美国 RackNerd 服务器，Explore 的 Caddy 做整台机器的入口，身份服务以边缘模式接在共用的 `kite-edge` 网络上（architecture.md §4）；本机演练过。
