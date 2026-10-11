@@ -1,0 +1,55 @@
+# Local development instance (dev/docker-compose.yaml). The URLs below are
+# the contract other Kite Plus services develop against; see README.md.
+extends: base.yaml
+environment: dev
+issuer: http://localhost:${IDENTITY_DEV_PORT:-8090}
+
+operatorLoginPolicy:
+  # Local admins should not need an authenticator app.
+  forceMfa: false
+
+smtp:
+  description: mailpit
+  host: mailpit:1025
+  tls: false
+  user: ""
+  password: ""
+  senderAddress: noreply@kite.plus
+  senderName: Kite Plus 账号
+
+apps:
+  - key: explore
+    name: Explore
+    devMode: true
+    redirectUris:
+      - http://localhost:4321/auth/callback
+      - http://localhost:8080/auth/callback
+    postLogoutRedirectUris:
+      - http://localhost:4321/
+    backChannelLogoutUri: http://host.docker.internal:8080/auth/backchannel-logout
+    webhookUrl: http://host.docker.internal:8080/hooks/idp
+  - key: comments
+    name: Comments
+    devMode: true
+    redirectUris:
+      - http://localhost:8081/auth/callback
+    postLogoutRedirectUris:
+      - http://localhost:8081/
+    backChannelLogoutUri: http://host.docker.internal:8081/auth/backchannel-logout
+    webhookUrl: http://host.docker.internal:8081/hooks/idp
+
+syncTokenLifetime: 87600h
+
+testUsers:
+  - username: alice
+    givenName: Alice
+    familyName: Liddell
+    email: alice@example.com
+    password: ${ALICE_PASSWORD}
+    language: zh
+  - username: bob
+    givenName: Bob
+    familyName: Builder
+    email: bob@example.com
+    password: ${BOB_PASSWORD}
+    language: en
