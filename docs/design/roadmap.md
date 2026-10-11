@@ -10,9 +10,9 @@
 | 阶段 | 要回答的问题 | 交付 | 状态 |
 |---|---|---|---|
 | **I0 选型** | ZITADEL 还是 Logto？ | `lab/prototypes/identity-selection/` 的实测记录；结论写进 [architecture.md §3](architecture.md#3-选型) | 完成（2026-10-11）：已选 ZITADEL，S1、S7 待 I1 确认 |
-| **I1 预发布** | 在真实域名和真机上能不能用？ | `id-staging.kite.plus`；本仓库的部署和初始化脚本；Explore 预发布环境接入 | 进行中：部署文件、初始化工具、本地开发栈已完成；部署地已定（与 Explore 同机，不用新服务器），等 DNS 和账号 |
-| **I2 生产** | 能不能稳定运行、出了事能不能恢复？ | `id.kite.plus`；恢复演练、升级演练；隐私政策和服务条款 | 未开始 |
-| **I3 Explore 上线** | 已有的 Explore 用户能不能平滑迁过来？ | Explore 生产环境用 Kite Plus 账号登录 | 未开始 |
+| **I1 预发布** | 在真实域名和真机上能不能用？ | `id-staging.kite.plus`；本仓库的部署和初始化脚本；Explore 预发布环境接入 | 跳过，先上生产（2026-10-11 维护者决定）：部署文件、初始化工具、本地开发栈已完成，DNS 已建；预发布环境以后在升级前补上，S1 真机测试改在生产上做 |
+| **I2 生产** | 能不能稳定运行、出了事能不能恢复？ | `id.kite.plus`；恢复演练、升级演练；隐私政策和服务条款 | 进行中：2026-10-11 已上线（邮箱加密码，飞书 SMTP，备份只在本机）；生产上的恢复和升级演练、异地备份、隐私政策和服务条款未完成 |
+| **I3 Explore 上线** | 已有的 Explore 用户能不能平滑迁过来？ | Explore 生产环境用 Kite Plus 账号登录 | 进行中：Explore v0.1.20 于 2026-10-11 部署并打开 Kite Plus 登录；已有账号的关联和过渡期截止时间未完成 |
 
 I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/kite-plus/comments/blob/main/docs/design/roadmap.md)）。评论服务真正依赖的是 I2：有了生产可用的身份服务就能开始，I3 只是 Explore 自己的迁移。
 
