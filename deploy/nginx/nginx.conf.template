@@ -28,6 +28,8 @@ http {
     acme_shared_zone zone=acme_shared:1M;
 
     js_import sessions_cookie from /etc/nginx/identity/njs/sessions_cookie.js;
+    js_import reader_language from /etc/nginx/identity/njs/reader_language.js;
+    js_shared_dict_zone zone=reader_language:1m timeout=600s;
 
     include /etc/nginx/identity/limits.conf;
 
@@ -83,6 +85,23 @@ http {
         location = /healthz {
             access_log off;
             return 200 "ok\n";
+        }
+    }
+
+    # Actions v2 target for new users' language (njs/reader_language.js).
+    # Not published: only containers on the compose network reach it.
+    server {
+        listen 8082;
+        access_log off;
+        client_body_buffer_size 64k;
+        client_body_in_single_buffer on;
+
+        location = /hooks/add-human-user {
+            js_content reader_language.addHumanUser;
+        }
+
+        location / {
+            return 404;
         }
     }
 }

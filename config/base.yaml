@@ -85,6 +85,12 @@ branding:
 # `identity-init -only readers` every few minutes (docs/runbooks).
 readerSelfDeletion: true
 
+# R8: the login UI creates users without a language and ZITADEL then mails
+# them in English. This Actions v2 call target, served by the proxy, sets the
+# registering browser's language (zh or en), else zh.
+readerLanguage:
+  endpoint: http://proxy:8082/hooks/add-human-user
+
 # User events pushed to every app's webhook (R5).
 events:
   - user.removed
@@ -119,11 +125,15 @@ loginTexts:
       title: 登录 Kite Plus 账号
     register:
       description: 创建你的 Kite Plus 账号。
+    idp:
+      signInWithZitadel: 用 Kite Plus 账号登录
   en:
     common:
       title: Sign in to your Kite Plus Account
     register:
       description: Create your Kite Plus Account.
+    idp:
+      signInWithZitadel: Sign in with Kite Plus Account
 
 messages:
   - type: verifyemail

@@ -35,6 +35,7 @@ type Config struct {
 	LoginTexts        map[string]map[string]any `yaml:"loginTexts"`
 	Apps              []App                     `yaml:"apps"`
 	Events            []string                  `yaml:"events"`
+	ReaderLanguage    ReaderLanguage            `yaml:"readerLanguage"`
 	SyncRole          string                    `yaml:"syncRole"`
 	SyncTokenLifetime Duration                  `yaml:"syncTokenLifetime"`
 	IdPs              IdPs                      `yaml:"idps"`
@@ -163,6 +164,12 @@ type App struct {
 	WebhookURL             string   `yaml:"webhookUrl"`
 	// DevMode allows plain http redirect URIs; only for local development.
 	DevMode bool `yaml:"devMode"`
+}
+
+// ReaderLanguage is the Actions v2 call target that gives new users a
+// preferred language; empty Endpoint turns it off.
+type ReaderLanguage struct {
+	Endpoint string `yaml:"endpoint"`
 }
 
 type IdPs struct {

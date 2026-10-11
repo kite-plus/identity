@@ -58,6 +58,7 @@ func (a *Applier) Run(ctx context.Context) (int, error) {
 		{"identity providers", a.idps},
 		{"projects and apps", a.projectAndApps},
 		{"event targets", a.actions},
+		{"reader language hook", a.readerLanguage},
 		{"sync machine users", a.machines},
 		{"test users", a.testUsers},
 		{"reader self-service", a.ReaderSelfService},
