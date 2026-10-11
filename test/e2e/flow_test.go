@@ -86,10 +86,11 @@ type grant struct {
 // code runs the authorization request for one user the way the login UI
 // does: create a session with the password check and link it to the auth
 // request. It returns the code from the callback.
-func (s *stack) code(t *testing.T, ctx context.Context, c client, u testUser) grant {
+func (s *stack) code(t *testing.T, ctx context.Context, c client, u testUser, extraScopes ...string) grant {
 	t.Helper()
 	p := s.provider(t, ctx)
-	conf := &oauth2.Config{ClientID: c.id, ClientSecret: c.secret, Endpoint: p.Endpoint(), RedirectURL: c.redirectURI, Scopes: []string{oidc.ScopeOpenID, "profile", "email"}}
+	scopes := append([]string{oidc.ScopeOpenID, "profile", "email"}, extraScopes...)
+	conf := &oauth2.Config{ClientID: c.id, ClientSecret: c.secret, Endpoint: p.Endpoint(), RedirectURL: c.redirectURI, Scopes: scopes}
 	state, nonce, verifier := randomString(8), randomString(8), oauth2.GenerateVerifier()
 	reqID := s.authorize(t, ctx, conf, state, nonce, verifier)
 
