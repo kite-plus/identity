@@ -72,7 +72,7 @@ func (a *Applier) Run(ctx context.Context) (int, error) {
 	if err := a.state.save(statePath); err != nil {
 		return a.changes, err
 	}
-	if err := a.writeOutputs(); err != nil {
+	if err := a.writeOutputs(ctx); err != nil {
 		return a.changes, err
 	}
 	return a.changes, nil

@@ -88,7 +88,7 @@ func (a *Applier) upsertIdP(ctx context.Context, kind, id string, fields, secret
 		return str(out, "id"), nil
 	}
 	var cur obj
-	if err := a.call(ctx, http.MethodGet, "/admin/v1/idps/"+id, "", nil, &cur); err != nil {
+	if err := a.call(ctx, http.MethodGet, "/admin/v1/idps/templates/"+id, "", nil, &cur); err != nil {
 		return "", err
 	}
 	idp := sub(cur, "idp")

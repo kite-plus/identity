@@ -55,8 +55,7 @@ func (a *Applier) testUsers(ctx context.Context) error {
 
 // writeOutputs writes one env file per app and, when there are test users,
 // users.txt. Everything goes to the gitignored output directory.
-func (a *Applier) writeOutputs() error {
-	ctx := context.Background()
+func (a *Applier) writeOutputs(ctx context.Context) error {
 	for _, app := range a.cfg.Apps {
 		p := strings.ToUpper(app.Key)
 		st := a.state.Apps[app.Key]

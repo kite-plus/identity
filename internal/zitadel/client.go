@@ -10,6 +10,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"strings"
 	"time"
@@ -95,10 +96,10 @@ func (c *Client) Call(ctx context.Context, method, path, orgID string, in, out a
 func (c *Client) Upload(ctx context.Context, path, filename, contentType string, data []byte) error {
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
-	h := make(map[string][]string)
-	h["Content-Disposition"] = []string{fmt.Sprintf(`form-data; name="file"; filename=%q`, filename)}
-	h["Content-Type"] = []string{contentType}
-	part, err := w.CreatePart(h)
+	part, err := w.CreatePart(textproto.MIMEHeader{
+		"Content-Disposition": {fmt.Sprintf(`form-data; name="file"; filename=%q`, filename)},
+		"Content-Type":        {contentType},
+	})
 	if err != nil {
 		return err
 	}
