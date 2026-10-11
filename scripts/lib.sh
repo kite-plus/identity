@@ -26,14 +26,21 @@ esac
     echo "missing $env_file" >&2
     exit 2
 }
+case "$env_file" in
+/*) ;;
+*) env_file=./$env_file ;;
+esac
 set -a
-. "./$env_file"
+. "$env_file"
 set +a
 
 if [ "$IDENTITY_ENV" = dev ]; then
     BOOTSTRAP_DIR=${BOOTSTRAP_DIR:-dev/out/bootstrap}
 else
-    BOOTSTRAP_DIR=${BOOTSTRAP_DIR:-$project_dir/${SECRETS_DIR:-./secrets}/bootstrap}
+    case "${SECRETS_DIR:=./secrets}" in
+    /*) BOOTSTRAP_DIR=${BOOTSTRAP_DIR:-$SECRETS_DIR/bootstrap} ;;
+    *) BOOTSTRAP_DIR=${BOOTSTRAP_DIR:-$project_dir/$SECRETS_DIR/bootstrap} ;;
+    esac
 fi
 
 compose() {
