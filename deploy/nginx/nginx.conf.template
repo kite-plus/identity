@@ -15,8 +15,9 @@ http {
     access_log /dev/stdout;
     error_log /dev/stderr warn;
 
-    # The ACME module resolves the CA through this resolver.
-    resolver 1.1.1.1 8.8.8.8 valid=300s ipv6=off;
+    # Docker's DNS: the ACME module resolves the CA through it, and the
+    # upstreams are re-resolved when containers are recreated on upgrade.
+    resolver 127.0.0.11 valid=10s ipv6=off;
 
     acme_issuer letsencrypt {
         uri ${ACME_DIRECTORY};
@@ -31,12 +32,14 @@ http {
     include /etc/nginx/identity/limits.conf;
 
     upstream zitadel_api {
-        server zitadel:8080;
+        zone zitadel_api 64k;
+        server zitadel:8080 resolve;
         keepalive 32;
     }
 
     upstream zitadel_login {
-        server login:3000;
+        zone zitadel_login 64k;
+        server login:3000 resolve;
         keepalive 32;
     }
 
