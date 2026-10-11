@@ -42,8 +42,12 @@ operatorLoginPolicy:
   passwordCheckLifetime: 12h
   multiFactorCheckLifetime: 12h
 
+# No lockout on failed passwords: ZITADEL's lock is permanent until an admin
+# unlocks it, so anyone knowing a reader's email could lock them out. The
+# proxy's per-IP and global rate limits cap guessing instead (R10). A
+# one-time code is only asked after a correct password, so its lockout stays.
 lockout:
-  maxPasswordAttempts: 10
+  maxPasswordAttempts: 0
   maxOtpAttempts: 10
 
 passwordComplexity:
