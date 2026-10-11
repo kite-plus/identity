@@ -76,14 +76,15 @@
 
 5. 管理员：用 `ADMIN_EMAIL` 和初始密码登录 `/ui/console`，按提示改密码、绑定第二因素（运维组织强制 MFA，R9）。然后在「默认设置」里确认 SMTP 能发信（或注册一个测试账号看验证邮件）。
 
-6. 定时任务（只在生产，root 的 crontab）：
+6. 定时任务（只在生产）。服务器的 Ubuntu 没装 cron，用 systemd 定时器，每个任务一对 `/etc/systemd/system/<名字>.service`（`Type=oneshot`，`ExecStart=/bin/sh -c '<命令>'`）和 `<名字>.timer`（`OnCalendar=<时间>`、`Persistent=true`），再 `systemctl enable --now <名字>.timer`：
 
-   ```cron
-   */5 * * * * cd /opt/identity && set -a && . deploy/.env && set +a && bin/identity-init -config config/production.yaml -token-file deploy/secrets/bootstrap/admin.pat -only readers >/dev/null
-   15 3 * * *  cd /opt/identity && scripts/backup.sh >>/var/log/identity-backup.log 2>&1
-   ```
+   | 名字 | 时间 | 命令 |
+   |---|---|---|
+   | `kite-identity-readers` | `*:0/5` | `cd /opt/identity && set -a && . deploy/.env && set +a && exec bin/identity-init -config config/production.yaml -token-file deploy/secrets/bootstrap/admin.pat -only readers` |
+   | `kite-identity-backup` | `*-*-* 03:15:00 UTC` | `cd /opt/identity && exec scripts/backup.sh` |
+   | `kite-comments-backup` | `*-*-* 03:25:00 UTC` | `cd /opt/comments && exec scripts/backup.sh` |
 
-   第一条让新注册的读者能自助删号（architecture.md §1.1 R6），第二条是每日备份，`BACKUP_REMOTE` 设了就同时复制到异地。
+   第一个让新注册的读者能自助删号（architecture.md §1.1 R6），后两个是每日备份，`BACKUP_REMOTE` 设了就同时复制到异地。`systemctl list-timers 'kite-*'` 看下次运行时间，`journalctl -u kite-identity-backup` 看日志。
 
 7. 验收：
    - 在中文浏览器里走一遍注册，验证邮件应为中文；把登录界面切到 English 再注册一个，邮件应为英文（新读者的语言，architecture.md §1.1 R8）。
@@ -110,3 +111,4 @@
 |---|---|---|---|
 | 2026-10-11 | 本机，生产 Compose 加端口覆盖 | v4.19.4 | 全部容器健康，issuer 为 `https://id.staging.kite.plus`（当时的预发布域名），HTTP 跳转 HTTPS；`identity-init` 对 staging 配置连跑两遍，第二遍无改动。证书无法在本机申请；本机代理把外部域名解析到 198.18.0.0/15，临时放宽了拒绝列表。顺带在 Let's Encrypt 测试目录注册了一个 ACME 账号（account 351160693），随卷删除，未签发证书 |
 | 2026-10-11 | 本机按服务器布局演练边缘模式：`kite-edge` 网络，Explore 的 Caddy 单独运行（`*.localhost` 站点名、Caddy 内部证书、没有 ACME），身份服务和评论服务各有生产、预发布两个项目 | v4.19.4 | issuer 为 `https://id.localhost` 和 `https://id.staging.localhost`；登录页、控制台标题、`/ui/login/` 404 正常；`identity-init` 经 Caddy 连跑两遍，第二遍无改动；新用户语言调用目标照常（kite-edge 上的容器调它得 403）。模拟 CDN 的容器替读者 203.0.113.10 连发 12 次注册提交，第 12 次 429，读者 203.0.113.20 不受影响，读者自己写在左边的地址不被采用；直连 Caddy、每次自带不同 `X-Forwarded-For` 的客户端仍按它自己的地址计数。发现 `return 302` 在边缘模式下成了 http 的绝对地址，已改成相对地址。OrbStack 会在不同网络之间转发（kite-edge 外的容器经网关 172.30.10.1 够到了 nginx），Linux 上的 Docker 默认不转发，上线时按第 7 步验证。备份写出、age 解密、经 rclone 替身复制到异地并清理过期副本 |
+| 2026-10-11 | **生产**，与 Explore 同机的服务器，边缘模式 | v4.19.4 | `kite-edge` 网络建好，Explore 的 Caddy 加上 `sites/` 的引入和挂载、接上 kite-edge（重建时几秒不通）；`id.kite.plus` 证书由 Caddy 签发（TLS-ALPN 在 Cloudflare 后失败，HTTP-01 成功），issuer 正确；`identity-init` 第一遍 47 处改动、第二遍无改动，GitHub、Apple 和 SMTP 跳过（SMTP 由维护者用服务器上的 `kite-set-smtp` 写入密码后生效）。验收：Explore 的网络连不到 nginx；nginx 日志里是读者的公网地址；经 Cloudflare 每次请求约 1 秒，串行 12 次会被令牌补回，并发 16 次里 11 次 429；`/ui/login/loginname` 404。备份 age 加密、在维护者电脑上用私钥解开核对过。服务器没有 cron，定时任务改用 systemd 定时器 |
