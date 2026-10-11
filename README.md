@@ -25,7 +25,7 @@ Requirements: Docker (Docker Desktop or OrbStack), Go 1.26, `make`, `openssl`.
 ```sh
 make dev-up     # start ZITADEL, the login UI, PostgreSQL, Mailpit and nginx
 make dev-init   # apply config/dev.yaml, write dev/out/*.env
-make dev-test   # end-to-end check (code flow, logout, webhooks, event query)
+make dev-test   # end-to-end check (code flow, logout, webhooks, event query, self-deletion)
 make dev-down   # stop, keep data
 make dev-reset  # wipe all data, start again and re-init (new client IDs and secrets)
 ```
@@ -102,9 +102,11 @@ Signature header:
 ZITADEL-Signature: t=1791699417,v1=78f4f798824b8eeee4fa0ea903b2b209f379a3bf5ab720504738db1901d4dd5c
 ```
 
-`v1` is the lowercase hex HMAC-SHA256, keyed with `P_IDP_WEBHOOK_SECRET`, of the string `<t>.<raw body>`, where `t` is the Unix time in seconds. Compare in constant time and reject timestamps more than 5 minutes off. During key rotation several `v1=` values may appear; accept the request if any matches. `test/e2e/events_test.go` (`verifySignature`) is a reference implementation.
+`v1` is the lowercase hex HMAC-SHA256, keyed with `P_IDP_WEBHOOK_SECRET`, of the string `<t>.<raw body>`, where `t` is the Unix time in seconds. Compare in constant time and reject timestamps more than 5 minutes off. The format allows several `v1=` values; accept the request if any matches. (Rotating the key in v4.19.4 is immediate, without an overlap: [key-rotation.md](docs/runbooks/key-rotation.md).) `test/e2e/events_test.go` (`verifySignature`) is a reference implementation.
 
 Delivery is best effort: one attempt with a 10 second timeout, no retries, and a non-2xx answer is only logged by ZITADEL. Answer `2xx` quickly and do the work afterwards.
+
+`make dev-test` changes a throwaway user through every state, so a running service also receives those events for a `sub` it has never seen; ignore unknown users.
 
 Every sync token can read every target's signing key (ZITADEL has no narrower role that can also read events), so a compromised service could forge webhooks for the other. Treat a webhook as a hint: before deleting or suspending anything, read the user with the API (next section) and act on what it says.
 
