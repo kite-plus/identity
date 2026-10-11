@@ -103,6 +103,19 @@ idps:
     privateKeyFile: ${APPLE_PRIVATE_KEY_FILE:-}
     scopes: [name, email]
 
+# Login UI strings that would otherwise say "Zitadel".
+loginTexts:
+  zh:
+    common:
+      title: 登录 Kite Plus 账号
+    register:
+      description: 创建你的 Kite Plus 账号。
+  en:
+    common:
+      title: Sign in to your Kite Plus Account
+    register:
+      description: Create your Kite Plus Account.
+
 messages:
   - type: verifyemail
     language: zh

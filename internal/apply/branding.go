@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 func (a *Applier) smtp(ctx context.Context) error {
@@ -192,6 +195,27 @@ func (a *Applier) messages(ctx context.Context) error {
 			return err
 		}
 		a.changed("message text %s/%s", m.Type, m.Language)
+	}
+	return nil
+}
+
+func (a *Applier) loginTexts(ctx context.Context) error {
+	locales := slices.Sorted(maps.Keys(a.cfg.LoginTexts))
+	for _, locale := range locales {
+		want := a.cfg.LoginTexts[locale]
+		var cur obj
+		path := "/v2/settings/hosted_login_translation?instance=true&ignoreInheritance=true&locale=" + url.QueryEscape(locale)
+		if err := a.call(ctx, http.MethodGet, path, "", nil, &cur); err != nil {
+			return err
+		}
+		if canon(obj(want)) == canon(sub(cur, "translations")) {
+			continue
+		}
+		in := obj{"instance": true, "locale": locale, "translations": want}
+		if err := a.call(ctx, http.MethodPut, "/v2/settings/hosted_login_translation", "", in, nil); err != nil {
+			return err
+		}
+		a.changed("login texts %s", locale)
 	}
 	return nil
 }

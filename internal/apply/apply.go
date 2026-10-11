@@ -54,6 +54,7 @@ func (a *Applier) Run(ctx context.Context) (int, error) {
 		{"smtp", a.smtp},
 		{"branding", a.branding},
 		{"message texts", a.messages},
+		{"login texts", a.loginTexts},
 		{"identity providers", a.idps},
 		{"projects and apps", a.projectAndApps},
 		{"event targets", a.actions},

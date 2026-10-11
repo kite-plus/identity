@@ -30,6 +30,9 @@ type Config struct {
 	SMTP               SMTP               `yaml:"smtp"`
 	Branding           Branding           `yaml:"branding"`
 	Messages           []Message          `yaml:"messages"`
+	// LoginTexts overrides login UI strings per locale, keyed like the
+	// login app's locales/*.json.
+	LoginTexts map[string]map[string]any `yaml:"loginTexts"`
 	Apps               []App              `yaml:"apps"`
 	Events             []string           `yaml:"events"`
 	SyncRole           string             `yaml:"syncRole"`
