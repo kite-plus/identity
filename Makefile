@@ -2,11 +2,12 @@ DEV_COMPOSE := docker compose --project-directory dev -f dev/docker-compose.yaml
 # Loads dev/.env into the environment of the command that follows.
 DEV_ENV := set -a && . ./dev/.env && set +a
 
-.PHONY: help dev-up dev-init dev-down dev-reset dev-logs dev-ps dev-test test build lint
+.PHONY: help dev-up dev-init dev-readers dev-down dev-reset dev-logs dev-ps dev-test test build lint
 
 help:
 	@echo "make dev-up     start the local identity provider (identity-dev)"
 	@echo "make dev-init   apply config/dev.yaml and write dev/out/*.env"
+	@echo "make dev-readers let readers who signed up since the last init delete their account"
 	@echo "make dev-down   stop it, keeping data"
 	@echo "make dev-reset  delete all data, start again and re-init"
 	@echo "make dev-test   end-to-end check against the running stack"
@@ -24,13 +25,16 @@ dev-up: dev/.env
 
 dev-init: dev/.env
 	@$(DEV_ENV) && go run ./cmd/identity-init -config config/dev.yaml -token-file dev/out/bootstrap/admin.pat -out dev/out
-	@$(DEV_ENV) && if [ "$$IDENTITY_DEV_PORT" != 8090 ]; then \
-		printf 'The dev issuer is http://localhost:%s, not the default http://localhost:8090,\nbecause IDENTITY_DEV_PORT in identity/dev/.env says so (port 8090 was taken).\nRead the issuer from the *.env files here.\n' "$$IDENTITY_DEV_PORT" > dev/out/NOTICE.txt; \
+	@$(DEV_ENV) && if [ "$$IDENTITY_DEV_PORT" != 8091 ]; then \
+		printf 'The dev issuer is http://localhost:%s, not the agreed http://localhost:8091,\nbecause IDENTITY_DEV_PORT in identity/dev/.env says so.\nRead the issuer from the *.env files here.\n' "$$IDENTITY_DEV_PORT" > dev/out/NOTICE.txt; \
 		echo "note: issuer port is $$IDENTITY_DEV_PORT (see dev/out/NOTICE.txt)"; \
 	else rm -f dev/out/NOTICE.txt; fi
 
 dev-down:
 	$(DEV_COMPOSE) down
+
+dev-readers:
+	@$(DEV_ENV) && go run ./cmd/identity-init -config config/dev.yaml -token-file dev/out/bootstrap/admin.pat -only readers
 
 dev-reset:
 	$(DEV_COMPOSE) down -v

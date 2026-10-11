@@ -2,7 +2,7 @@
 # the contract other Kite Plus services develop against; see README.md.
 extends: base.yaml
 environment: dev
-issuer: http://localhost:${IDENTITY_DEV_PORT:-8090}
+issuer: http://localhost:${IDENTITY_DEV_PORT:-8091}
 
 operatorLoginPolicy:
   # Local admins should not need an authenticator app.

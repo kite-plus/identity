@@ -28,7 +28,7 @@ services:
     environment:
       ZITADEL_MASTERKEY: ${ZITADEL_MASTERKEY:?run make dev-up}
       ZITADEL_EXTERNALDOMAIN: localhost
-      ZITADEL_EXTERNALPORT: ${IDENTITY_DEV_PORT:-8090}
+      ZITADEL_EXTERNALPORT: ${IDENTITY_DEV_PORT:-8091}
       ZITADEL_EXTERNALSECURE: "false"
       ZITADEL_TLS_ENABLED: "false"
       ZITADEL_DATABASE_POSTGRES_HOST: db
@@ -59,10 +59,10 @@ services:
       ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_NAME: Login UI
       ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE: "2099-01-01T00:00:00Z"
       ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "true"
-      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI: http://localhost:${IDENTITY_DEV_PORT:-8090}/ui/v2/login/
-      ZITADEL_OIDC_DEFAULTLOGINURLV2: http://localhost:${IDENTITY_DEV_PORT:-8090}/ui/v2/login/login?authRequest=
-      ZITADEL_OIDC_DEFAULTLOGOUTURLV2: http://localhost:${IDENTITY_DEV_PORT:-8090}/ui/v2/login/logout?post_logout_redirect=
-      ZITADEL_SAML_DEFAULTLOGINURLV2: http://localhost:${IDENTITY_DEV_PORT:-8090}/ui/v2/login/login?samlRequest=
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI: http://localhost:${IDENTITY_DEV_PORT:-8091}/ui/v2/login/
+      ZITADEL_OIDC_DEFAULTLOGINURLV2: http://localhost:${IDENTITY_DEV_PORT:-8091}/ui/v2/login/login?authRequest=
+      ZITADEL_OIDC_DEFAULTLOGOUTURLV2: http://localhost:${IDENTITY_DEV_PORT:-8091}/ui/v2/login/logout?post_logout_redirect=
+      ZITADEL_SAML_DEFAULTLOGINURLV2: http://localhost:${IDENTITY_DEV_PORT:-8091}/ui/v2/login/login?samlRequest=
       # The default deny list blocks private and loopback ranges, which
       # covers host.docker.internal; dev targets live there.
       ZITADEL_HTTPCLIENT_DENYLIST: 169.254.0.0/16
@@ -107,7 +107,7 @@ services:
     image: nginx:1.30.5-alpine
     restart: unless-stopped
     ports:
-      - 127.0.0.1:${IDENTITY_DEV_PORT:-8090}:80
+      - 127.0.0.1:${IDENTITY_DEV_PORT:-8091}:80
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ../deploy/nginx:/etc/nginx/identity:ro

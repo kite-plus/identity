@@ -17,7 +17,7 @@ import (
 )
 
 type Client struct {
-	// BaseURL is where requests go, e.g. http://localhost:8090 or
+	// BaseURL is where requests go, e.g. http://localhost:8091 or
 	// http://zitadel:8080 from inside the compose network.
 	BaseURL string
 	// Host overrides the Host header; ZITADEL picks the instance by it.
