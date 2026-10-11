@@ -1,7 +1,10 @@
-# Kite Plus identity service for staging and production.
-# One compose project per environment on its own server:
+# Kite Plus identity service for staging and production, one compose
+# project per environment:
 #   cd deploy && cp .env.example .env   # fill in, see docs/runbooks/first-start.md
 #   docker compose up -d --wait
+# On its own, nginx owns ports 80 and 443 and gets the certificate itself.
+# Production runs in edge mode instead, behind the Caddy it shares with
+# Explore: COMPOSE_FILE in .env adds docker-compose.edge.yaml.
 name: identity
 
 x-zitadel-db: &zitadel-db
@@ -128,10 +131,12 @@ services:
       ZITADEL_OIDC_DEFAULTLOGOUTURLV2: https://${IDENTITY_DOMAIN}/ui/v2/login/logout?post_logout_redirect=
       ZITADEL_SAML_DEFAULTLOGINURLV2: https://${IDENTITY_DOMAIN}/ui/v2/login/login?samlRequest=
       ZITADEL_LOGSTORE_ACCESS_STDOUT_ENABLED: "false"
-      # The default deny list for outbound calls, except this compose
-      # network (172.31.250.0/24, see networks below): the reader language
-      # hook lives on the proxy (config/base.yaml readerLanguage).
-      ZITADEL_HTTPCLIENT_DENYLIST: localhost,0.0.0.0/8,10.0.0.0/8,100.64.0.0/10,127.0.0.0/8,169.254.0.0/16,172.16.0.0/13,172.24.0.0/14,172.28.0.0/15,172.30.0.0/16,172.31.0.0/17,172.31.128.0/18,172.31.192.0/19,172.31.224.0/20,172.31.240.0/21,172.31.248.0/23,172.31.251.0/24,172.31.252.0/22,192.168.0.0/16,198.18.0.0/15,::/128,::1/128,fc00::/7,fe80::/10
+      # The default deny list for outbound calls, except the compose
+      # networks (IDENTITY_SUBNET, see networks below): the reader language
+      # hook lives on the proxy (config/base.yaml readerLanguage). It leaves
+      # out 172.31.250.0/23, room for production and a staging project on
+      # the same server; Docker keeps the two networks apart.
+      ZITADEL_HTTPCLIENT_DENYLIST: localhost,0.0.0.0/8,10.0.0.0/8,100.64.0.0/10,127.0.0.0/8,169.254.0.0/16,172.16.0.0/13,172.24.0.0/14,172.28.0.0/15,172.30.0.0/16,172.31.0.0/17,172.31.128.0/18,172.31.192.0/19,172.31.224.0/20,172.31.240.0/21,172.31.248.0/23,172.31.252.0/22,192.168.0.0/16,198.18.0.0/15,::/128,::1/128,fc00::/7,fe80::/10
     healthcheck:
       test: ["CMD", "/app/zitadel", "ready"]
       interval: 10s
@@ -171,7 +176,8 @@ networks:
     enable_ipv6: false
     ipam:
       config:
-        - subnet: 172.31.250.0/24
+        # 172.31.251.0/24 for staging next to production.
+        - subnet: ${IDENTITY_SUBNET:-172.31.250.0/24}
 
 volumes:
   db-data:

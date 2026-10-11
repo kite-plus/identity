@@ -1,0 +1,29 @@
+# Edge mode, how production runs: the Caddy that Explore runs on the same
+# server terminates TLS for every hostname there and reaches this proxy
+# over the shared kite-edge network. nginx publishes no port, listens on
+# plain HTTP and skips ACME; ZITADEL keeps ExternalSecure, since readers
+# still use https. Turn it on in .env:
+#   COMPOSE_FILE=docker-compose.yaml:docker-compose.edge.yaml
+# Caddy's site block is deploy/edge/identity.caddy (identity-staging.caddy
+# for staging). See docs/runbooks/first-start.md.
+services:
+  proxy:
+    ports: !reset []
+    environment:
+      IDENTITY_SUBNET: ${IDENTITY_SUBNET:-172.31.250.0/24}
+      KITE_EDGE_SUBNET: ${KITE_EDGE_SUBNET:-172.30.10.0/24}
+      NGINX_ENVSUBST_FILTER: ^(IDENTITY_DOMAIN|IDENTITY_SUBNET|KITE_EDGE_SUBNET)$
+    volumes: !override
+      - ./nginx/edge.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+      - ./nginx:/etc/nginx/identity:ro
+    networks:
+      default:
+      kite-edge:
+        aliases:
+          # Caddy's upstream; identity-staging for the staging project.
+          - ${IDENTITY_EDGE_ALIAS:-identity}
+
+networks:
+  # Created once per server: docker network create --subnet 172.30.10.0/24 kite-edge
+  kite-edge:
+    external: true

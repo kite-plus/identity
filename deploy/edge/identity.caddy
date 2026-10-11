@@ -1,0 +1,12 @@
+# id.kite.plus on the Caddy shared with Explore (edge mode, see
+# docker-compose.edge.yaml). Copy into that Caddy's sites/ directory and
+# reload it. No log directive: readers' addresses stay out of access logs.
+{$IDENTITY_SITE:id.kite.plus} {
+	encode zstd gzip
+
+	# One address, the reader's as Caddy found it behind the CDN; nginx
+	# rate-limits by it.
+	reverse_proxy {$IDENTITY_UPSTREAM:identity:80} {
+		header_up X-Forwarded-For {client_ip}
+	}
+}

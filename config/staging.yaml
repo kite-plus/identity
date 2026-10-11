@@ -1,5 +1,5 @@
-# Staging: id.staging.kite.plus, its own server and database. Every upgrade
-# and configuration change runs here first.
+# Staging: id.staging.kite.plus, its own compose project and database next
+# to production. Every upgrade and configuration change runs here first.
 extends: base.yaml
 environment: staging
 issuer: https://id.staging.kite.plus

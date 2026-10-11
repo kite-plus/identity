@@ -2,18 +2,19 @@
 # IDENTITY_ENV=production|staging (default production, both use deploy/)
 # or dev (the local identity-dev stack). IDENTITY_PROJECT overrides the
 # compose project name, e.g. for a restore drill next to a running stack.
+# Compose runs inside the project directory, as an operator would run it,
+# so COMPOSE_FILE and COMPOSE_PROJECT_NAME from the env file (edge mode,
+# staging next to production) apply here too.
 
 IDENTITY_ENV=${IDENTITY_ENV:-production}
 
 case "$IDENTITY_ENV" in
 dev)
     env_file=${IDENTITY_ENV_FILE:-dev/.env}
-    compose_file=dev/docker-compose.yaml
     project_dir=dev
     ;;
 production | staging)
     env_file=${IDENTITY_ENV_FILE:-deploy/.env}
-    compose_file=deploy/docker-compose.yaml
     project_dir=deploy
     ;;
 *)
@@ -26,10 +27,7 @@ esac
     echo "missing $env_file" >&2
     exit 2
 }
-case "$env_file" in
-/*) ;;
-*) env_file=./$env_file ;;
-esac
+env_file=$(cd "$(dirname "$env_file")" && pwd)/$(basename "$env_file")
 set -a
 . "$env_file"
 set +a
@@ -44,11 +42,14 @@ else
 fi
 
 compose() {
-    if [ -n "${IDENTITY_PROJECT:-}" ]; then
-        docker compose -p "$IDENTITY_PROJECT" --project-directory "$project_dir" -f "$compose_file" --env-file "$env_file" "$@"
-    else
-        docker compose --project-directory "$project_dir" -f "$compose_file" --env-file "$env_file" "$@"
-    fi
+    (
+        cd "$project_dir" || exit
+        if [ -n "${IDENTITY_PROJECT:-}" ]; then
+            docker compose -p "$IDENTITY_PROJECT" --env-file "$env_file" "$@"
+        else
+            docker compose --env-file "$env_file" "$@"
+        fi
+    )
 }
 
 zitadel_version() {
