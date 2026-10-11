@@ -1,6 +1,6 @@
 # 路线图
 
-> 状态：规划草案，尚未开工 · 最近更新：2026-10-10
+> 状态：I0 完成（S1、S7 随 I1）；I1 中不依赖服务器的部分已在本地完成 · 最近更新：2026-10-11
 > 每个阶段只在退出条件全部满足后才进入下一阶段。进度如实标注。
 
 ---
@@ -9,8 +9,8 @@
 
 | 阶段 | 要回答的问题 | 交付 | 状态 |
 |---|---|---|---|
-| **I0 选型** | ZITADEL 还是 Logto？ | `lab/prototypes/identity-selection/` 的实测记录；结论写进 [architecture.md §3](architecture.md#3-选型) | 未开始 |
-| **I1 预发布** | 在真实域名和真机上能不能用？ | `id.staging.kite.plus`；本仓库的部署和初始化脚本；Explore 预发布环境接入 | 未开始 |
+| **I0 选型** | ZITADEL 还是 Logto？ | `lab/prototypes/identity-selection/` 的实测记录；结论写进 [architecture.md §3](architecture.md#3-选型) | 完成（2026-10-11）：已选 ZITADEL，S1、S7 待 I1 确认 |
+| **I1 预发布** | 在真实域名和真机上能不能用？ | `id.staging.kite.plus`；本仓库的部署和初始化脚本；Explore 预发布环境接入 | 进行中：部署文件、初始化工具、本地开发栈已完成；等服务器和账号 |
 | **I2 生产** | 能不能稳定运行、出了事能不能恢复？ | `id.kite.plus`；恢复演练、升级演练；隐私政策和服务条款 | 未开始 |
 | **I3 Explore 上线** | 已有的 Explore 用户能不能平滑迁过来？ | Explore 生产环境用 Kite Plus 账号登录 | 未开始 |
 
@@ -36,11 +36,21 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 - S2–S6 两边都有记录，能按决定规则给出结论；S1、S7 只差真机和 Apple 账号时，结论可以附带「I1 确认」。
 - 选中的实现满足 [architecture.md §1](architecture.md#1-各服务对身份服务的要求) 的 R1–R11，做不到的写明替代办法。
 
+**结果**（2026-10-11）：两条都满足。S2–S6 的记录在 lab，结论「已选 ZITADEL（I1 确认）」写进 [architecture.md §3](architecture.md#3-选型)，R1–R11 的落实和替代办法在 [§1.1](architecture.md#11-落实情况)。GitHub 登录因为没有测试用的 OAuth App 放到 I1。
+
 ---
 
 ## 3. I1 预发布
 
-**需要维护者准备的**：一台香港服务器；`id.staging.kite.plus` 的域名解析；SMTP 服务商的账号；`kite-plus` 组织下预发布用的 GitHub OAuth App；Apple 开发者账号下预发布用的 Services ID 和登录私钥。
+**需要维护者准备的**：一台香港服务器；`id.staging.kite.plus` 的域名解析；SMTP 服务商的账号；`kite-plus` 组织下预发布用的 GitHub OAuth App；Apple 开发者账号下预发布用的 Services ID 和登录私钥；备份异地存放的位置和 age 密钥对。
+
+**已在本地完成**（2026-10-11）：
+
+- `deploy/`（Compose、nginx、`.env.example`）、`config/`（dev、staging、production）、`scripts/`（备份、恢复、升级）、`cmd/identity-init`，按 [architecture.md §6](architecture.md#6-仓库结构)。
+- 本地开发栈 `identity-dev` 和端到端检查 `make dev-test`：代码流程、`sid`、back-channel logout、事件推送和查询、读者自助删号，Explore 和评论服务按 [README](../../README.md#contract-for-kite-plus-services) 的约定对接。
+- 生产 Compose 在本机起过一次：issuer、HTTP 跳转、初始化工具对 staging 配置连跑两遍（第二遍无改动）都正常；ACME 申请证书没法在本机验证。
+- 限流（第 12 次注册提交返回 429）、账号锁定、恢复演练（[restore.md](../runbooks/restore.md)）、小版本升级演练（v4.18.0 → v4.19.4，约 11 秒不可用）。
+- 运维手册初稿：[runbooks](../runbooks/README.md)。
 
 **范围**：
 
@@ -100,9 +110,13 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 
 | 事项 | 写在哪里 | 什么时候定 |
 |---|---|---|
-| ZITADEL 还是 Logto | [architecture.md §3](architecture.md#3-选型) | I0 结束 |
-| 登录保持时长 | [architecture.md §1](architecture.md#1-各服务对身份服务的要求) 的 R7 | I0 结束 |
+| ~~ZITADEL 还是 Logto~~ | [architecture.md §3](architecture.md#3-选型) | 2026-10-11 定：ZITADEL，S1、S7 待 I1 确认 |
+| ~~登录保持时长~~ | [architecture.md §1.1](architecture.md#11-落实情况) 的 R7 | 2026-10-11 定：30 天 |
+| ~~反向代理用 Caddy 还是 nginx~~ | [architecture.md §4](architecture.md#4-部署) | 2026-10-11 定：nginx |
 | 是否提供 Google 登录 | [architecture.md §2](architecture.md#2-登录方式) | I1 |
-| 服务商、线路和机器配置；反向代理用 Caddy 还是 nginx | [architecture.md §4](architecture.md#4-部署) | I1 开工前 |
+| 服务商、线路和机器配置 | [architecture.md §4](architecture.md#4-部署) | I1 开工前 |
 | SMTP 服务商 | [architecture.md §4](architecture.md#4-部署) | I1 开工前 |
+| 删号时撤销 Apple 令牌的办法（ZITADEL 不做） | [architecture.md §1.1](architecture.md#11-落实情况) 的 R11 | I1，有 Apple 开发者账号后 |
+| 账号锁定被滥用时的处理 | [architecture.md §5](architecture.md#5-运维) | I1 观察后 |
+| 备份异地存放位置 | [architecture.md §5](architecture.md#5-运维) | I2 开工前 |
 | Explore 过渡期的截止时间 | [Explore accounts.md §1](https://github.com/kite-plus/explore/blob/main/docs/design/accounts.md#1-登录与会话) | I3 开工前 |
