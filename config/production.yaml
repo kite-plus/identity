@@ -1,0 +1,32 @@
+# Production: id.kite.plus. The issuer is fixed forever (R1); never apply
+# anything here that has not run on staging.
+extends: base.yaml
+environment: production
+issuer: https://id.kite.plus
+
+smtp:
+  description: smtp
+  host: ${SMTP_HOST}
+  tls: true
+  user: ${SMTP_USER}
+  password: ${SMTP_PASSWORD}
+  senderAddress: noreply@kite.plus
+  senderName: Kite Plus 账号
+
+apps:
+  - key: explore
+    name: Explore
+    redirectUris:
+      - https://explore.kite.plus/auth/callback
+    postLogoutRedirectUris:
+      - https://explore.kite.plus/
+    backChannelLogoutUri: https://explore.kite.plus/auth/backchannel-logout
+    webhookUrl: https://explore.kite.plus/hooks/idp
+  - key: comments
+    name: Comments
+    redirectUris:
+      - https://comments.kite.plus/auth/callback
+    postLogoutRedirectUris:
+      - https://comments.kite.plus/
+    backChannelLogoutUri: https://comments.kite.plus/auth/backchannel-logout
+    webhookUrl: https://comments.kite.plus/hooks/idp

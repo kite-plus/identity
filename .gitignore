@@ -5,3 +5,4 @@
 /bin/
 /dev/out/
 .DS_Store
+/deploy/secrets/

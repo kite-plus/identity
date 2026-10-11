@@ -1,0 +1,32 @@
+# Staging: id.staging.kite.plus, its own server and database. Every upgrade
+# and configuration change runs here first.
+extends: base.yaml
+environment: staging
+issuer: https://id.staging.kite.plus
+
+smtp:
+  description: smtp
+  host: ${SMTP_HOST}
+  tls: true
+  user: ${SMTP_USER}
+  password: ${SMTP_PASSWORD}
+  senderAddress: noreply@kite.plus
+  senderName: Kite Plus 账号
+
+apps:
+  - key: explore
+    name: Explore
+    redirectUris:
+      - https://explore.staging.kite.plus/auth/callback
+    postLogoutRedirectUris:
+      - https://explore.staging.kite.plus/
+    backChannelLogoutUri: https://explore.staging.kite.plus/auth/backchannel-logout
+    webhookUrl: https://explore.staging.kite.plus/hooks/idp
+  - key: comments
+    name: Comments
+    redirectUris:
+      - https://comments.staging.kite.plus/auth/callback
+    postLogoutRedirectUris:
+      - https://comments.staging.kite.plus/
+    backChannelLogoutUri: https://comments.staging.kite.plus/auth/backchannel-logout
+    webhookUrl: https://comments.staging.kite.plus/hooks/idp

@@ -1,0 +1,166 @@
+# Kite Plus identity service for staging and production.
+# One compose project per environment on its own server:
+#   cd deploy && cp .env.example .env   # fill in, see docs/runbooks/first-start.md
+#   docker compose up -d --wait
+name: identity
+
+x-zitadel-db: &zitadel-db
+  ZITADEL_DATABASE_POSTGRES_HOST: db
+  ZITADEL_DATABASE_POSTGRES_PORT: "5432"
+  ZITADEL_DATABASE_POSTGRES_DATABASE: zitadel
+  ZITADEL_DATABASE_POSTGRES_USER_USERNAME: zitadel
+  ZITADEL_DATABASE_POSTGRES_USER_PASSWORD: ${ZITADEL_DB_PASSWORD:?}
+  ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE: disable
+
+x-zitadel-public: &zitadel-public
+  ZITADEL_EXTERNALDOMAIN: ${IDENTITY_DOMAIN:?}
+  ZITADEL_EXTERNALPORT: "443"
+  ZITADEL_EXTERNALSECURE: "true"
+  ZITADEL_TLS_ENABLED: "false"
+
+services:
+  proxy:
+    image: nginx:1.30.5-alpine
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      IDENTITY_DOMAIN: ${IDENTITY_DOMAIN:?}
+      ACME_CONTACT: ${ACME_CONTACT:?}
+      ACME_DIRECTORY: ${ACME_DIRECTORY:-https://acme-v02.api.letsencrypt.org/directory}
+      # Render nginx.conf.template into /etc/nginx; only these variables
+      # are substituted, nginx's own $variables stay untouched.
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+      NGINX_ENVSUBST_FILTER: ^(IDENTITY_DOMAIN|ACME_CONTACT|ACME_DIRECTORY)$
+    volumes:
+      - ./nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+      - ./nginx:/etc/nginx/identity:ro
+      - acme-state:/var/cache/nginx/acme
+    depends_on:
+      zitadel:
+        condition: service_healthy
+      login:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8081/healthz >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  db:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?}
+      POSTGRES_DB: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    shm_size: 256mb
+
+  # Creates the zitadel database and role; idempotent, needs the
+  # PostgreSQL superuser, so it is the only service that gets it.
+  zitadel-init:
+    image: ghcr.io/zitadel/zitadel:${ZITADEL_VERSION:?}
+    restart: "no"
+    command: init
+    environment:
+      <<: *zitadel-db
+      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: postgres
+      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?}
+      ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Runs migrations on every start and creates the first instance once.
+  zitadel-setup:
+    image: ghcr.io/zitadel/zitadel:${ZITADEL_VERSION:?}
+    restart: "no"
+    user: "0"
+    command: setup --masterkeyFromEnv
+    environment:
+      <<: [*zitadel-db, *zitadel-public]
+      ZITADEL_MASTERKEY: ${ZITADEL_MASTERKEY:?}
+      ZITADEL_FIRSTINSTANCE_INSTANCENAME: Kite Plus
+      ZITADEL_FIRSTINSTANCE_DEFAULTLANGUAGE: zh
+      ZITADEL_FIRSTINSTANCE_ORG_NAME: Kite Plus Operators
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: ${ADMIN_EMAIL:?}
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_FIRSTNAME: Kite Plus
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_LASTNAME: Admin
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_EMAIL_ADDRESS: ${ADMIN_EMAIL:?}
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_EMAIL_VERIFIED: "true"
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: ${ADMIN_INITIAL_PASSWORD:?}
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED: "true"
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME: identity-init
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_NAME: identity-init
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_PAT_EXPIRATIONDATE: ${INIT_PAT_EXPIRATION:?}
+      ZITADEL_FIRSTINSTANCE_PATPATH: /bootstrap/admin.pat
+      ZITADEL_FIRSTINSTANCE_LOGINCLIENTPATPATH: /bootstrap/login-client.pat
+      ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_USERNAME: login-client
+      ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_NAME: Login UI
+      ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE: ${LOGIN_PAT_EXPIRATION:?}
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "true"
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI: https://${IDENTITY_DOMAIN}/ui/v2/login/
+      ZITADEL_OIDC_DEFAULTLOGINURLV2: https://${IDENTITY_DOMAIN}/ui/v2/login/login?authRequest=
+      ZITADEL_OIDC_DEFAULTLOGOUTURLV2: https://${IDENTITY_DOMAIN}/ui/v2/login/logout?post_logout_redirect=
+      ZITADEL_SAML_DEFAULTLOGINURLV2: https://${IDENTITY_DOMAIN}/ui/v2/login/login?samlRequest=
+    volumes:
+      - ${SECRETS_DIR:-./secrets}/bootstrap:/bootstrap
+    depends_on:
+      zitadel-init:
+        condition: service_completed_successfully
+
+  zitadel:
+    image: ghcr.io/zitadel/zitadel:${ZITADEL_VERSION:?}
+    restart: unless-stopped
+    command: start --masterkeyFromEnv --tlsMode external
+    environment:
+      <<: [*zitadel-db, *zitadel-public]
+      ZITADEL_MASTERKEY: ${ZITADEL_MASTERKEY:?}
+      ZITADEL_OIDC_DEFAULTLOGINURLV2: https://${IDENTITY_DOMAIN}/ui/v2/login/login?authRequest=
+      ZITADEL_OIDC_DEFAULTLOGOUTURLV2: https://${IDENTITY_DOMAIN}/ui/v2/login/logout?post_logout_redirect=
+      ZITADEL_SAML_DEFAULTLOGINURLV2: https://${IDENTITY_DOMAIN}/ui/v2/login/login?samlRequest=
+      ZITADEL_LOGSTORE_ACCESS_STDOUT_ENABLED: "false"
+    healthcheck:
+      test: ["CMD", "/app/zitadel", "ready"]
+      interval: 10s
+      timeout: 30s
+      retries: 12
+      start_period: 30s
+    depends_on:
+      zitadel-setup:
+        condition: service_completed_successfully
+
+  login:
+    image: ghcr.io/zitadel/zitadel-login:${ZITADEL_VERSION:?}
+    restart: unless-stopped
+    user: "0"
+    environment:
+      ZITADEL_API_URL: http://zitadel:8080
+      NEXT_PUBLIC_BASE_PATH: /ui/v2/login
+      ZITADEL_SERVICE_USER_TOKEN_FILE: /bootstrap/login-client.pat
+      ZITADEL_SESSION_COOKIE_SECRET: ${LOGIN_SESSION_COOKIE_SECRET:?}
+      CUSTOM_REQUEST_HEADERS: Host:${IDENTITY_DOMAIN},X-Forwarded-Proto:https
+      EMAIL_VERIFICATION: "true"
+    volumes:
+      - ${SECRETS_DIR:-./secrets}/bootstrap:/bootstrap:ro
+    healthcheck:
+      test: ["CMD", "/bin/sh", "-c", "node /app/healthcheck.mjs http://localhost:3000/ui/v2/login/healthy"]
+      interval: 10s
+      timeout: 30s
+      retries: 12
+      start_period: 20s
+    depends_on:
+      zitadel:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  acme-state:

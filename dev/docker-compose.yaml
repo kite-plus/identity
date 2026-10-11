@@ -69,7 +69,7 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:
-      - ./out/bootstrap:/bootstrap
+      - ${DEV_BOOTSTRAP_DIR:-./out/bootstrap}:/bootstrap
     healthcheck:
       test: ["CMD", "/app/zitadel", "ready"]
       interval: 5s
@@ -92,7 +92,7 @@ services:
       CUSTOM_REQUEST_HEADERS: Host:localhost,X-Forwarded-Proto:http
       EMAIL_VERIFICATION: "true"
     volumes:
-      - ./out/bootstrap:/bootstrap:ro
+      - ${DEV_BOOTSTRAP_DIR:-./out/bootstrap}:/bootstrap:ro
     healthcheck:
       test: ["CMD", "/bin/sh", "-c", "node /app/healthcheck.mjs http://localhost:3000/ui/v2/login/healthy"]
       interval: 5s
@@ -130,8 +130,8 @@ services:
       MP_SMTP_AUTH_ALLOW_INSECURE: "1"
       MP_MAX_MESSAGES: "5000"
     ports:
-      - 127.0.0.1:1025:1025
-      - 127.0.0.1:8025:8025
+      - 127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025
+      - 127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025
 
 volumes:
   db-data:
