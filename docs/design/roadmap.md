@@ -44,7 +44,7 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 
 **需要维护者准备的**：不用新服务器，预发布和生产都在与 Explore 同机的美国 RackNerd 服务器上（[architecture.md §4](architecture.md#4-部署)）。
 
-- Cloudflare 上开代理的 DNS 记录：`id-staging`、`comments-staging`，以及 `explore-staging`（`identity-init` 登记客户端时要解析各应用的 back-channel logout 地址，Explore 预发布还没部署也要先有记录）；先定二级子域的证书怎么办（买 Advanced Certificate Manager，还是改成一级子域），再按 architecture.md §4 核对 Cloudflare 的其他设置。2026-10-11 已建，连同生产的 `id`、`comments`，都指向与 Explore 同机的服务器。
+- Cloudflare 上开代理的 DNS 记录：`id-staging`、`comments-staging`，以及 `explore-staging`（`identity-init` 登记客户端时要解析各应用的 back-channel logout 地址，Explore 预发布还没部署也要先有记录）；Cloudflare 的其他设置按 architecture.md §4 核对。2026-10-11 已建，连同生产的 `id`、`comments`，都指向与 Explore 同机的服务器。
 - SMTP 服务商的账号；`kite.plus` 的 SPF、DKIM、DMARC。
 - `kite-plus` 组织下预发布用的 GitHub OAuth App；Apple 开发者账号下预发布用的 Services ID 和登录私钥。
 - 一对 age 密钥（私钥离线）。
