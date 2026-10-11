@@ -29,7 +29,7 @@
 | R8 | 中英文界面和邮件，Kite Plus 的品牌 | 全部 | 读者以中文为主 |
 | R9 | 平台管理员必须开启 MFA | 全部 | 管理员账号被盗等于全部账号被盗 |
 | R10 | 能被限流：登录、注册、找回密码、发验证码这几类地址 | 全部 | 防撞库、防邮件轰炸 |
-| R11 | 提供 Apple 登录，删除账号时撤销 Apple 的令牌 | Kite 应用 | 登录页有 GitHub 登录，App Store 审核指南 4.8 要求应用同时提供一种只收集姓名和邮箱、允许隐藏邮箱的登录方式；用 Apple 登录的应用删号时要调用 Apple 的接口撤销令牌（§2） |
+| R11 | 登录页提供 GitHub 等第三方登录时，同时提供 Apple 登录，删除账号时撤销 Apple 的令牌 | Kite 应用 | App Store 审核指南 4.8：账号能用第三方登录建立时，应用必须同时提供一种只收集姓名和邮箱、允许隐藏邮箱的登录方式；只用自家账号（邮箱加密码、Passkey）不受这条约束。用 Apple 登录的应用删号时要调用 Apple 的接口撤销令牌（§2）。GitHub 登录延后期间不需要（2026-10-11） |
 
 不需要：授权确认页、pairwise `sub`、SAML、多租户组织、原生应用客户端。Kite 应用经 Explore 服务端登录，身份服务里只有 Explore 这个机密客户端（[Explore accounts.md §1.1](https://github.com/kite-plus/explore/blob/main/docs/design/accounts.md#11-应用登录-设计中)）。
 
@@ -61,9 +61,9 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
 |---|---|---|
 | 邮箱加密码 | 做 | 邮箱必须验证；ZITADEL 要在登录容器上开启 `EMAIL_VERIFICATION` |
 | Passkey | 做，推荐 | 绑定域名，钓不走。国内不少安卓手机没有谷歌服务，用不了 |
-| GitHub | 做 | 技术博客的读者大多有；可以不设密码直接用 GitHub 注册 |
+| GitHub | 延后（2026-10-11 维护者决定：先只做邮箱加密码） | 技术博客的读者大多有，可以不设密码直接用 GitHub 注册。配置已就绪（`GITHUB_*` 环境变量为空时初始化工具跳过），以后开启只需建 OAuth App、填环境变量、重跑初始化；开启时 R11 随之生效 |
 | 邮箱验证码 | 不做 | 没有 Passkey 的读者最省事的方式，但 ZITADEL 不支持作为首要因素（§3）。没有谷歌服务的安卓读者用邮箱加密码或 GitHub，I1 真机确认够不够用（S1） |
-| Apple | 做，Kite 应用切换到统一登录之前上线 | R11。读者选择隐藏邮箱时，拿到的是 `privaterelay.appleid.com` 的转发地址，发信域名要先在 Apple 开发者账号里登记，否则验证邮件和通知收不到；Apple 只在第一次授权时给出名字，之后要靠身份服务自己存的资料 |
+| Apple | 随 GitHub 登录一起做：GitHub 登录上线、并且 Kite 应用切换到统一登录之前上线 | R11。读者选择隐藏邮箱时，拿到的是 `privaterelay.appleid.com` 的转发地址，发信域名要先在 Apple 开发者账号里登记，否则验证邮件和通知收不到；Apple 只在第一次授权时给出名字，之后要靠身份服务自己存的资料 |
 | Google | `[待定]` | 国内用不了，对海外读者有用 |
 | 微信、QQ | 不做 | 微信网站登录只对企业等组织开放，还要求已备案的域名；QQ 互联个人可以申请，但同样要求网站已备案（[comments architecture.md §5](https://github.com/kite-plus/comments/blob/main/docs/design/architecture.md#5-部署地与合规)）。两者的 OAuth 也都不是标准实现 |
 
@@ -140,7 +140,7 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
   - 服务之间的调用也经过 Cloudflare（见上文「入口」），Bot Fight Mode、Under Attack 和会弹质询的 WAF 规则会把它们挡掉，不要对这几个主机名开。
   - 不需要 WebSocket，也不需要开 gRPC：初始化工具和各应用用 ZITADEL 的 REST 接口，nginx 也只按 HTTP/1.1 转发。
 - **发信**：SMTP 服务商 `[待定]`；发件人 `Kite Plus 账号 <noreply@kite.plus>`；`kite.plus` 配好 SPF、DKIM 和 DMARC，否则 QQ 邮箱、163 邮箱很可能直接拒收。
-- **GitHub 登录**：在 `kite-plus` 组织下注册 OAuth App，生产和预发布各一个，回调指向各自的 `id` 域名。
+- **GitHub 登录**（延后，见 §2）：开启时在 `kite-plus` 组织下注册 OAuth App，生产和预发布各一个，回调指向各自的 `id` 域名。
 - **Apple 登录**：在 Apple 开发者账号下建 Services ID 和用于登录的私钥，生产和预发布各一个 Services ID，回调指向各自的 `id` 域名；`noreply@kite.plus` 所在的发信域名登记到 Apple 的邮件转发服务（§2）。
 - **密钥**：
   - ZITADEL 的主密钥是 32 个字符，初始化后不能改；丢了，库里加密的数据就再也解不开。离线保存两份。

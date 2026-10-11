@@ -46,7 +46,7 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 
 - Cloudflare 上开代理的 DNS 记录：`id-staging`、`comments-staging`，以及 `explore-staging`（`identity-init` 登记客户端时要解析各应用的 back-channel logout 地址，Explore 预发布还没部署也要先有记录）；Cloudflare 的其他设置按 architecture.md §4 核对。2026-10-11 已建，连同生产的 `id`、`comments`，都指向与 Explore 同机的服务器。
 - SMTP 服务商的账号；`kite.plus` 的 SPF、DKIM、DMARC。
-- `kite-plus` 组织下预发布用的 GitHub OAuth App；Apple 开发者账号下预发布用的 Services ID 和登录私钥。
+- GitHub 和 Apple 登录延后（[architecture.md §2](architecture.md#2-登录方式)），I1 先只测邮箱加密码和 Passkey；开启时再准备 `kite-plus` 组织下的 GitHub OAuth App 和 Apple 开发者账号下的 Services ID、登录私钥。
 - 一对 age 密钥（私钥离线）。
 
 **已在本地完成**（2026-10-11）：
@@ -76,7 +76,7 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 
 ## 4. I2 生产
 
-**需要维护者准备的**：Cloudflare 上开代理的 `id`、`comments` 两条 DNS 记录（2026-10-11 已建）；生产用的 GitHub OAuth App 和 Apple Services ID；离线保存主密钥的地方；备份异地存放的位置（另一个地方的服务器或对象存储，rclone 能连上的；地址不写进仓库）和它的凭据；隐私政策和服务条款的最终审阅。
+**需要维护者准备的**：Cloudflare 上开代理的 `id`、`comments` 两条 DNS 记录（2026-10-11 已建）；开启 GitHub 登录时，生产用的 GitHub OAuth App 和 Apple Services ID；离线保存主密钥的地方；备份异地存放的位置（另一个地方的服务器或对象存储，rclone 能连上的；地址不写进仓库）和它的凭据；隐私政策和服务条款的最终审阅。
 
 **范围**：
 
@@ -101,7 +101,7 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 - 已有的本站账号保留密码登录，读者用密码登录一次、关联 Kite Plus 账号后关掉。
 - 会话 Cookie 改名为 `__Host-explore_session`，记下 `sid`，处理 back-channel logout。
 - 处理用户删除、停用事件，每小时对账。
-- Kite 应用（iOS、Android）改用应用登录：先发一版改用 Bearer 令牌，再切换登录方式；Apple 登录在生产上可用之后才切（[Explore accounts.md §1.1](https://github.com/kite-plus/explore/blob/main/docs/design/accounts.md#11-应用登录-设计中)）。
+- Kite 应用（iOS、Android）改用应用登录：先发一版改用 Bearer 令牌，再切换登录方式；身份服务提供 GitHub 登录时，Apple 登录在生产上可用之后才切（[Explore accounts.md §1.1](https://github.com/kite-plus/explore/blob/main/docs/design/accounts.md#11-应用登录-设计中)）。
 
 **退出条件**：
 
