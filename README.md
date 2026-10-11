@@ -34,12 +34,12 @@ make dev-reset  # wipe all data, start again and re-init (new client IDs and sec
 
 | What | Where |
 |---|---|
-| Issuer, login pages, console | `http://localhost:8090` (`/ui/console` for the admin console) |
+| Issuer, login pages, console | `http://localhost:8091` (`/ui/console` for the admin console) |
 | Mailpit SMTP / web UI | `localhost:1025` / `http://localhost:8025` |
 | Admin login | `admin@localhost.test`, password `ADMIN_PASSWORD` in `dev/.env` |
 | Test users | `dev/out/users.txt`: `alice` (zh) and `bob` (en), verified emails |
 
-The port is `IDENTITY_DEV_PORT` in `dev/.env` (default 8090). If 8090 is taken on your machine, set another port there and run `make dev-reset`; `make dev-init` then writes `dev/out/NOTICE.txt` and the issuer in the env files follows the port. Other services must read the issuer from their env file rather than hard-coding it.
+The agreed dev issuer is `http://localhost:8091` (`IDENTITY_DEV_PORT` in `dev/.env`, default 8091). If that port is taken on your machine, set another one there and run `make dev-reset`; `make dev-init` then writes `dev/out/NOTICE.txt` and the issuer in the env files follows the port. Services should read the issuer from their env file rather than hard-coding it.
 
 Other services can send their own dev mail to Mailpit at `localhost:1025` (no auth, no TLS).
 
@@ -70,9 +70,22 @@ Client behaviour, as checked by `make dev-test`:
 - The ID token carries `sub`, `sid`, `email`, `email_verified`, `name`, `given_name`, `family_name`, `preferred_username`, `locale`, `amr`. `sub` is the ZITADEL user ID and is identical for every client. `aud` holds the client ID and the app's project ID; `azp` is the client ID. Each app has its own project, so a token for one service never lists the other.
 - `sid` is the ZITADEL session ID. Store it with the local session.
 - Back-channel logout: `POST`, `application/x-www-form-urlencoded`, field `logout_token`, a JWT signed with the issuer's keys (`iss`, `aud` = client ID, `sub`, `sid`, `jti`, `iat`, `exp` 15 minutes, `events` with `http://schemas.openid.net/event/backchannel-logout`, no `nonce`). It is sent when the session is ended at the identity provider (sign-out in the login UI, end_session, or an admin terminating it), up to 3 attempts. It is **not** sent when a session simply expires.
+- The proxy rate-limits the login UI's form submissions per IP and across all clients, and the OIDC endpoints per IP (300 a minute, burst 100); a service's token requests come from one address, so keep them to sign-ins.
 - `prompt=select_account` shows the account picker. Do not rely on `prompt=none`: login v2 shows the login page (no session) or an HTTP 400 page (stale session) instead of redirecting with `error=login_required` ([zitadel#12165](https://github.com/zitadel/zitadel/issues/12165)). A plain authorization request with a live session at the identity provider returns immediately without UI, which is what the comment widget popup needs.
 
 The ZITADEL container reaches the services through `host.docker.internal`. On macOS (Docker Desktop and OrbStack) this reaches servers bound to `127.0.0.1` on the host; that was checked with OrbStack. On Linux, `host.docker.internal` maps to the Docker bridge gateway and the services must listen on `0.0.0.0` or that gateway address.
+
+### Account page
+
+Readers manage their Kite Plus Account at **`<issuer>/ui/console/users/me`**: `http://localhost:8091/ui/console/users/me` in dev, `https://id.staging.kite.plus/ui/console/users/me` and `https://id.kite.plus/ui/console/users/me` later. Link "Kite Plus 账号" / "管理 Kite Plus 账号" and "删除 Kite Plus 账号" there; it signs the reader in first if needed.
+
+- There they change their name, email and password, add passkeys and second factors, see linked GitHub or Apple accounts, and delete the account: "删除账户" / "Delete account" at the bottom of the general tab. Deletion pushes `user.removed` to every service.
+- The delete button only appears once the reader holds the self-deletion role. `identity-init` grants it to every reader; production runs that step every five minutes, so a reader who signed up a moment ago may have to wait. In dev, run `make dev-readers` (or `make dev-init`) after signing up a new test reader.
+- The page is ZITADEL's console. It shows the Kite Plus logo and icon from the branding settings and the tab title "Kite Plus • Account", but keeps ZITADEL's own colours, and a few help texts still mention Zitadel; the label policy cannot change those.
+
+### New readers' language
+
+Users created through the login UI get `preferredLanguage` `zh` or `en` from the registering browser (the login UI's language switch, else `Accept-Language`), and `zh` when neither is Chinese or English or when a user is created through the API without one. Mails follow it, and the ID token carries it as `locale`. ZITADEL's tag for Simplified Chinese is `zh`.
 
 ### User event webhooks
 
@@ -95,6 +108,7 @@ ZITADEL Actions v2 sends one `POST` per event to each service's webhook for thes
 - `aggregateID` is the affected user, i.e. the `sub`. `userID` is whoever made the change (an admin, a machine user, or the user themselves), not the affected user.
 - `sequence` counts per user; `(aggregateID, sequence)` identifies an event, use it to deduplicate.
 - `event_payload` is added when the event has one; these five events have none.
+- Failed passwords no longer lock accounts (a lock could only be undone by an admin, so anyone could lock a reader out). `user.locked` now only comes from an admin or from too many wrong one-time codes after a correct password. Services suspend accounts on `user.deactivated` only; `user.locked` and `user.unlocked` are pushed for information.
 
 Signature header:
 
