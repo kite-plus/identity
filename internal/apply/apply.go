@@ -23,7 +23,6 @@ type Applier struct {
 	instanceID  string
 	operatorsID string
 	readersID   string
-	projectID   string
 
 	changes int
 }
@@ -56,7 +55,7 @@ func (a *Applier) Run(ctx context.Context) (int, error) {
 		{"branding", a.branding},
 		{"message texts", a.messages},
 		{"identity providers", a.idps},
-		{"project and apps", a.projectAndApps},
+		{"projects and apps", a.projectAndApps},
 		{"event targets", a.actions},
 		{"sync machine users", a.machines},
 		{"test users", a.testUsers},

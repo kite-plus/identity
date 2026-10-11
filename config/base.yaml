@@ -76,9 +76,6 @@ branding:
   icon: branding/favicon.svg
   iconDark: branding/logo-dark.svg
 
-project:
-  name: Kite Plus
-
 # User events pushed to every app's webhook (R5).
 events:
   - user.removed

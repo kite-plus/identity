@@ -30,7 +30,6 @@ type Config struct {
 	SMTP               SMTP               `yaml:"smtp"`
 	Branding           Branding           `yaml:"branding"`
 	Messages           []Message          `yaml:"messages"`
-	Project            Project            `yaml:"project"`
 	Apps               []App              `yaml:"apps"`
 	Events             []string           `yaml:"events"`
 	SyncRole           string             `yaml:"syncRole"`
@@ -144,15 +143,14 @@ type Message struct {
 	FooterText string `yaml:"footerText"`
 }
 
-type Project struct {
-	Name string `yaml:"name"`
-}
-
 // App is one confidential OIDC client and the service behind it.
 type App struct {
 	// Key is the service name; it prefixes the variables in the env file.
-	Key                    string   `yaml:"key"`
-	Name                   string   `yaml:"name"`
+	Key  string `yaml:"key"`
+	Name string `yaml:"name"`
+	// Project defaults to Name. Each app gets its own project because
+	// ZITADEL puts every client ID of a project into the ID token audience.
+	Project                string   `yaml:"project"`
 	RedirectURIs           []string `yaml:"redirectUris"`
 	PostLogoutRedirectURIs []string `yaml:"postLogoutRedirectUris"`
 	BackChannelLogoutURI   string   `yaml:"backChannelLogoutUri"`
@@ -315,11 +313,12 @@ func (c *Config) validate() error {
 		return fmt.Errorf("issuer must be an absolute URL, got %q", c.Issuer)
 	case c.Orgs.Operators == "" || c.Orgs.Readers == "":
 		return fmt.Errorf("orgs.operators and orgs.readers are required")
-	case c.Project.Name == "":
-		return fmt.Errorf("project.name is required")
 	}
 	seen := map[string]bool{}
-	for _, a := range c.Apps {
+	for i, a := range c.Apps {
+		if a.Project == "" {
+			c.Apps[i].Project = a.Name
+		}
 		if a.Key == "" || a.Name == "" || len(a.RedirectURIs) == 0 {
 			return fmt.Errorf("app %q: key, name and redirectUris are required", a.Key)
 		}

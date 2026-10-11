@@ -8,42 +8,47 @@ import (
 )
 
 func (a *Applier) projectAndApps(ctx context.Context) error {
-	name := a.cfg.Project.Name
-	var out obj
-	in := obj{"queries": []obj{{"nameQuery": obj{"name": name, "method": textEquals}}}}
-	if err := a.call(ctx, http.MethodPost, "/management/v1/projects/_search", a.readersID, in, &out); err != nil {
-		return err
-	}
-	for _, p := range list(out, "result") {
-		if str(p, "name") == name {
-			a.projectID = str(p, "id")
-		}
-	}
-	if a.projectID == "" {
-		var created obj
-		// No role checks: any Kite Plus account may sign in to every app.
-		req := obj{"name": name, "projectRoleAssertion": false, "projectRoleCheck": false, "hasProjectCheck": false}
-		if err := a.call(ctx, http.MethodPost, "/management/v1/projects", a.readersID, req, &created); err != nil {
+	for _, app := range a.cfg.Apps {
+		projectID, err := a.project(ctx, app.Project)
+		if err != nil {
 			return err
 		}
-		a.projectID = str(created, "id")
-		a.changed("project %q created", name)
-	}
-
-	var apps obj
-	if err := a.call(ctx, http.MethodPost, "/management/v1/projects/"+a.projectID+"/apps/_search", a.readersID, obj{}, &apps); err != nil {
-		return err
-	}
-	existing := map[string]obj{}
-	for _, ap := range list(apps, "result") {
-		existing[str(ap, "name")] = ap
-	}
-	for _, app := range a.cfg.Apps {
-		if err := a.app(ctx, app, existing[app.Name]); err != nil {
+		var apps obj
+		if err := a.call(ctx, http.MethodPost, "/management/v1/projects/"+projectID+"/apps/_search", a.readersID, obj{}, &apps); err != nil {
+			return err
+		}
+		var cur obj
+		for _, ap := range list(apps, "result") {
+			if str(ap, "name") == app.Name {
+				cur = ap
+			}
+		}
+		if err := a.app(ctx, projectID, app, cur); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (a *Applier) project(ctx context.Context, name string) (string, error) {
+	var out obj
+	in := obj{"queries": []obj{{"nameQuery": obj{"name": name, "method": textEquals}}}}
+	if err := a.call(ctx, http.MethodPost, "/management/v1/projects/_search", a.readersID, in, &out); err != nil {
+		return "", err
+	}
+	for _, p := range list(out, "result") {
+		if str(p, "name") == name {
+			return str(p, "id"), nil
+		}
+	}
+	var created obj
+	// No role checks: any Kite Plus account may sign in to every app.
+	req := obj{"name": name, "projectRoleAssertion": false, "projectRoleCheck": false, "hasProjectCheck": false}
+	if err := a.call(ctx, http.MethodPost, "/management/v1/projects", a.readersID, req, &created); err != nil {
+		return "", err
+	}
+	a.changed("project %q created", name)
+	return str(created, "id"), nil
 }
 
 // oidcConfig is the desired client configuration: a confidential web
@@ -68,13 +73,13 @@ func oidcConfig(app config.App) obj {
 	}
 }
 
-func (a *Applier) app(ctx context.Context, app config.App, cur obj) error {
+func (a *Applier) app(ctx context.Context, projectID string, app config.App, cur obj) error {
 	want := oidcConfig(app)
 	st := a.state.Apps[app.Key]
 	if cur == nil {
 		in := merged(want, obj{"name": app.Name, "version": "OIDC_VERSION_1_0"})
 		var out obj
-		if err := a.call(ctx, http.MethodPost, "/management/v1/projects/"+a.projectID+"/apps/oidc", a.readersID, in, &out); err != nil {
+		if err := a.call(ctx, http.MethodPost, "/management/v1/projects/"+projectID+"/apps/oidc", a.readersID, in, &out); err != nil {
 			return err
 		}
 		a.state.Apps[app.Key] = AppState{AppID: str(out, "appId"), ClientID: str(out, "clientId"), ClientSecret: str(out, "clientSecret")}
@@ -89,7 +94,7 @@ func (a *Applier) app(ctx context.Context, app config.App, cur obj) error {
 		"accessTokenType": "OIDC_TOKEN_TYPE_BEARER",
 	}, sub(cur, "oidcConfig"))
 	if d := diff(want, have); len(d) > 0 {
-		if err := a.call(ctx, http.MethodPut, "/management/v1/projects/"+a.projectID+"/apps/"+appID+"/oidc_config", a.readersID, want, nil); err != nil {
+		if err := a.call(ctx, http.MethodPut, "/management/v1/projects/"+projectID+"/apps/"+appID+"/oidc_config", a.readersID, want, nil); err != nil {
 			return err
 		}
 		a.changed("app %q %v", app.Name, d)
@@ -97,7 +102,7 @@ func (a *Applier) app(ctx context.Context, app config.App, cur obj) error {
 	clientID := str(have, "clientId")
 	if st.ClientID != clientID || st.ClientSecret == "" {
 		var out obj
-		if err := a.call(ctx, http.MethodPost, "/management/v1/projects/"+a.projectID+"/apps/"+appID+"/oidc_config/_generate_client_secret", a.readersID, obj{}, &out); err != nil {
+		if err := a.call(ctx, http.MethodPost, "/management/v1/projects/"+projectID+"/apps/"+appID+"/oidc_config/_generate_client_secret", a.readersID, obj{}, &out); err != nil {
 			return err
 		}
 		a.state.Apps[app.Key] = AppState{AppID: appID, ClientID: clientID, ClientSecret: str(out, "clientSecret")}
