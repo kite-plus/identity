@@ -2,4 +2,6 @@
 *.env.local
 /secrets/
 /backups/
+/bin/
+/dev/out/
 .DS_Store
