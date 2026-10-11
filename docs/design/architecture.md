@@ -100,7 +100,7 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
 | S3 | §1 的 R2–R5、R7 | 用一个小的 Go 测试客户端逐项验证：`prompt=none`、`prompt=select_account`（应用里「换一个账号」要用）、ID Token 里的 `sid`、back-channel logout（包括身份服务会话自然过期时发不发）、用户删除和停用事件的推送与查询、登录保持时长 |
 | S4 | 运维 | 内存和 CPU 占用；从备份恢复到空机器；跨一个小版本升级 |
 | S5 | 安全 | 近两年安全公告的数量、严重程度和修复速度；自带的限流、锁定和验证码 |
-| S6 | 自定义域名、品牌、中英文邮件模板 | 按 `id.staging.kite.plus` 配一遍 |
+| S6 | 自定义域名、品牌、中英文邮件模板 | 按 `id-staging.kite.plus` 配一遍 |
 | S7 | Apple 登录（R11） | 用隐藏邮箱注册，确认能收到验证邮件；第一次授权后的资料怎么存；删号时 Apple 令牌有没有撤销。要 Apple 开发者账号，放到 I1 |
 
 **决定规则**：ZITADEL 在 S1 上的缺口可以接受（比如 GitHub 加密码已经够用），就用 ZITADEL；否则，Logto 在 S2–S6 上都不比 ZITADEL 差时改用 Logto。结论写回本节，把「首选」改成「已选」。
@@ -115,7 +115,7 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
 
 - **地点**：与 Explore 同机的美国 RackNerd 服务器（2026-10-11 维护者决定）。这台机器 6 核、7.9 GB 内存（空闲约 7 GB）、140 GB 空闲磁盘，Explore 整套只用约 300 MB；不用另买服务器，运维集中在一处。源站藏在 Cloudflare 后面，它的地址和主机名不写进任何仓库。代价是到国内比香港慢，以 Explore 现在的访问情况为参考，I1 真机测试时一并看。账号是个人信息，放在境外涉及的出境规则和评论服务一样，见 [comments architecture.md §5](https://github.com/kite-plus/comments/blob/main/docs/design/architecture.md#5-部署地与合规)。
 - **以后迁到香港**仍然可行：issuer 是域名，不绑机器。在新机器上按 [restore.md](../runbooks/restore.md) 恢复备份（同一主密钥、同一 `IDENTITY_DOMAIN`），再把 DNS 指过去；签名密钥和客户端都在库里，各应用不用改配置。
-- **环境**：生产 `id.kite.plus`；预发布 `id.staging.kite.plus`，在同一台机器上作为第二个 Compose 项目（`identity-staging`），独立实例、独立数据库，平时停着，只在测试和升级时启动。每次升级先在预发布上跑。
+- **环境**：生产 `id.kite.plus`；预发布 `id-staging.kite.plus`，在同一台机器上作为第二个 Compose 项目（`identity-staging`），独立实例、独立数据库，平时停着，只在测试和升级时启动。每次升级先在预发布上跑。
 - **入口（边缘模式，生产用这个）**：一台机器上只能有一个进程占 80 和 443，这台机器上是 Explore 的 Caddy（[Explore project-layout.md §10](https://github.com/kite-plus/explore/blob/main/docs/design/project-layout.md#10-部署)）。它为机器上所有主机名终止 TLS、申请证书，身份服务的 nginx 不发布端口：
   - 共用的 Docker 网络 `kite-edge`（172.30.10.0/24，每台服务器建一次）只连边缘 Caddy 和各服务的入口容器：身份服务的 nginx（别名 `identity`，预发布 `identity-staging`）、评论服务的 `server`。其余不共用：各服务有自己的 Compose 项目、PostgreSQL 容器和内部网络；Explore 的 worker 会抓任意外部地址，不接 kite-edge。
   - `deploy/docker-compose.edge.yaml` 让 nginx 去掉端口、接上 kite-edge，换用 `deploy/nginx/edge.conf.template`：只说 HTTP，不做 ACME。`.env` 里的 `COMPOSE_FILE` 打开它，运维命令不变。
@@ -131,10 +131,10 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
   - 身份服务：ZITADEL v4.19.4，接口和登录界面两个容器，两个镜像版本必须一致。`zitadel-init`（建库建角色，只有它拿到 PostgreSQL 超级用户密码）和 `zitadel-setup`（迁移、首次建实例）是一次性容器，每次启动都先跑。
   - PostgreSQL 17：身份服务自己的容器，独占一个库和一个角色。评论服务、Explore 各用自己的 PostgreSQL 容器。
 - **资源**：本机演练空闲时，生产一套约 360 MB，预发布约 240 MB，评论服务一套约 50 MB（空库），边缘 Caddy 约 50 MB `[EV]`。按峰值留余量：生产身份服务 2 GB（ZITADEL 自己建议至少 2 GB 内存，密码哈希会让 CPU 和内存短时冲高），预发布启动时 1 GB，评论服务生产和预发布共 1 GB，Explore 连同 Caddy 1 GB，合计 5 GB，7.9 GB 里还剩约 3 GB 给系统和文件缓存。暂不设容器内存上限，先看监控。备份每份不到 1 MB，30 天的量可以忽略。
-- **Cloudflare**：`id`、`id.staging`（以及评论服务的 `comments`、`comments.staging`）的 DNS 记录都开代理，和 `explore` 一样。要注意的设置：
+- **Cloudflare**：`id`、`id-staging`（以及评论服务的 `comments`、`comments-staging`）的 DNS 记录都开代理，和 `explore` 一样。要注意的设置：
   - SSL/TLS 模式用 Full (strict)。不能用 Flexible：Cloudflare 会用 http 回源，Caddy 再跳回 https，死循环。
   - 第一次签发证书走 HTTP-01：Let's Encrypt 经 Cloudflare 用 http 访问 `/.well-known/acme-challenge/`。Always Use HTTPS 对这些主机名生效时，这个请求会被跳到 https，而 Caddy 那时还没有证书，签发失败；照 `explore` 当初签证书时的设置做，或者用 Configuration Rule 对 `/.well-known/acme-challenge/*` 关掉它。不要为了签证书把记录临时改成仅 DNS：解析历史会留下源站地址。
-  - **二级子域** `[待定]`：免费的 Universal SSL 只覆盖 `kite.plus` 和 `*.kite.plus`。`id.staging.kite.plus`、`comments.staging.kite.plus`（以及 Explore 预发布 `explore.staging.kite.plus`）开代理后，Cloudflare 边缘没有它们的证书，浏览器连不上。二选一，I1 开工前定：买 Advanced Certificate Manager 覆盖 `*.staging.kite.plus`；或者把预发布改成一级子域（如 `id-staging.kite.plus`）。预发布的 issuer 还没初始化，改名只动 `config/staging.yaml`、预发布的 `.env` 和 Caddy 站点文件里的默认名。
+  - **预发布用一级子域**（2026-10-11 定）：免费的 Universal SSL 只覆盖 `kite.plus` 和 `*.kite.plus`，`id.staging.kite.plus` 这样的二级子域开代理后，Cloudflare 边缘没有它的证书，浏览器连不上。所以预发布用一级子域 `id-staging.kite.plus`、`comments-staging.kite.plus`、`explore-staging.kite.plus`，不为预发布买 Advanced Certificate Manager。
   - 缓存保持默认（只按扩展名缓存静态文件，遵守源站的 `Cache-Control`），不对这些主机名加 Cache Everything 一类的规则：登录页、令牌和发现文档不能被缓存。评论服务另有说明（[comments architecture.md §9](https://github.com/kite-plus/comments/blob/main/docs/design/architecture.md#9-部署与运维)）。
   - Email Address Obfuscation（Cloudflare 默认开）和 Rocket Loader 会改写 HTML、插入 Cloudflare 自己的脚本：登录界面和账号页上满是邮箱地址，评论的 iframe 和控制台只允许自己的脚本，iframe 还要求 Trusted Types。用 Configuration Rules 对这几个主机名关掉，上线前在浏览器里看一遍登录页和评论组件。
   - 服务之间的调用也经过 Cloudflare（见上文「入口」），Bot Fight Mode、Under Attack 和会弹质询的 WAF 规则会把它们挡掉，不要对这几个主机名开。

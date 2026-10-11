@@ -1,6 +1,6 @@
 # 首次部署
 
-> 适用：在与 Explore 同机的服务器上第一次部署 `id.staging.kite.plus` 或 `id.kite.plus`，用边缘模式（[architecture.md §4](../design/architecture.md#4-部署)）。生产的 issuer 一经初始化就不能再改（R1），动手前把域名再核对一遍。没有共用入口的机器用独立模式，见文末。
+> 适用：在与 Explore 同机的服务器上第一次部署 `id-staging.kite.plus` 或 `id.kite.plus`，用边缘模式（[architecture.md §4](../design/architecture.md#4-部署)）。生产的 issuer 一经初始化就不能再改（R1），动手前把域名再核对一遍。没有共用入口的机器用独立模式，见文末。
 
 ## 准备
 
@@ -108,5 +108,5 @@
 
 | 日期 | 环境 | 版本 | 备注 |
 |---|---|---|---|
-| 2026-10-11 | 本机，生产 Compose 加端口覆盖 | v4.19.4 | 全部容器健康，issuer 为 `https://id.staging.kite.plus`，HTTP 跳转 HTTPS；`identity-init` 对 staging 配置连跑两遍，第二遍无改动。证书无法在本机申请；本机代理把外部域名解析到 198.18.0.0/15，临时放宽了拒绝列表。顺带在 Let's Encrypt 测试目录注册了一个 ACME 账号（account 351160693），随卷删除，未签发证书 |
+| 2026-10-11 | 本机，生产 Compose 加端口覆盖 | v4.19.4 | 全部容器健康，issuer 为 `https://id.staging.kite.plus`（当时的预发布域名），HTTP 跳转 HTTPS；`identity-init` 对 staging 配置连跑两遍，第二遍无改动。证书无法在本机申请；本机代理把外部域名解析到 198.18.0.0/15，临时放宽了拒绝列表。顺带在 Let's Encrypt 测试目录注册了一个 ACME 账号（account 351160693），随卷删除，未签发证书 |
 | 2026-10-11 | 本机按服务器布局演练边缘模式：`kite-edge` 网络，Explore 的 Caddy 单独运行（`*.localhost` 站点名、Caddy 内部证书、没有 ACME），身份服务和评论服务各有生产、预发布两个项目 | v4.19.4 | issuer 为 `https://id.localhost` 和 `https://id.staging.localhost`；登录页、控制台标题、`/ui/login/` 404 正常；`identity-init` 经 Caddy 连跑两遍，第二遍无改动；新用户语言调用目标照常（kite-edge 上的容器调它得 403）。模拟 CDN 的容器替读者 203.0.113.10 连发 12 次注册提交，第 12 次 429，读者 203.0.113.20 不受影响，读者自己写在左边的地址不被采用；直连 Caddy、每次自带不同 `X-Forwarded-For` 的客户端仍按它自己的地址计数。发现 `return 302` 在边缘模式下成了 http 的绝对地址，已改成相对地址。OrbStack 会在不同网络之间转发（kite-edge 外的容器经网关 172.30.10.1 够到了 nginx），Linux 上的 Docker 默认不转发，上线时按第 7 步验证。备份写出、age 解密、经 rclone 替身复制到异地并清理过期副本 |

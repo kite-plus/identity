@@ -77,7 +77,7 @@ The ZITADEL container reaches the services through `host.docker.internal`. On ma
 
 ### Account page
 
-Readers manage their Kite Plus Account at **`<issuer>/ui/console/users/me`**: `http://localhost:8091/ui/console/users/me` in dev, `https://id.staging.kite.plus/ui/console/users/me` and `https://id.kite.plus/ui/console/users/me` later. Link "Kite Plus 账号" / "管理 Kite Plus 账号" and "删除 Kite Plus 账号" there; it signs the reader in first if needed.
+Readers manage their Kite Plus Account at **`<issuer>/ui/console/users/me`**: `http://localhost:8091/ui/console/users/me` in dev, `https://id-staging.kite.plus/ui/console/users/me` and `https://id.kite.plus/ui/console/users/me` later. Link "Kite Plus 账号" / "管理 Kite Plus 账号" and "删除 Kite Plus 账号" there; it signs the reader in first if needed.
 
 - There they change their name, email and password, add passkeys and second factors, see linked GitHub or Apple accounts, and delete the account: "删除账户" / "Delete account" at the bottom of the general tab. Deletion pushes `user.removed` to every service.
 - The delete button only appears once the reader holds the self-deletion role. `identity-init` grants it to every reader; production runs that step every five minutes, so a reader who signed up a moment ago may have to wait. In dev, run `make dev-readers` (or `make dev-init`) after signing up a new test reader.

@@ -10,7 +10,7 @@
 | 阶段 | 要回答的问题 | 交付 | 状态 |
 |---|---|---|---|
 | **I0 选型** | ZITADEL 还是 Logto？ | `lab/prototypes/identity-selection/` 的实测记录；结论写进 [architecture.md §3](architecture.md#3-选型) | 完成（2026-10-11）：已选 ZITADEL，S1、S7 待 I1 确认 |
-| **I1 预发布** | 在真实域名和真机上能不能用？ | `id.staging.kite.plus`；本仓库的部署和初始化脚本；Explore 预发布环境接入 | 进行中：部署文件、初始化工具、本地开发栈已完成；部署地已定（与 Explore 同机，不用新服务器），等 DNS 和账号 |
+| **I1 预发布** | 在真实域名和真机上能不能用？ | `id-staging.kite.plus`；本仓库的部署和初始化脚本；Explore 预发布环境接入 | 进行中：部署文件、初始化工具、本地开发栈已完成；部署地已定（与 Explore 同机，不用新服务器），等 DNS 和账号 |
 | **I2 生产** | 能不能稳定运行、出了事能不能恢复？ | `id.kite.plus`；恢复演练、升级演练；隐私政策和服务条款 | 未开始 |
 | **I3 Explore 上线** | 已有的 Explore 用户能不能平滑迁过来？ | Explore 生产环境用 Kite Plus 账号登录 | 未开始 |
 
@@ -44,7 +44,7 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 
 **需要维护者准备的**：不用新服务器，预发布和生产都在与 Explore 同机的美国 RackNerd 服务器上（[architecture.md §4](architecture.md#4-部署)）。
 
-- Cloudflare 上开代理的 DNS 记录：`id.staging`、`comments.staging`，以及 `explore.staging`（`identity-init` 登记客户端时要解析各应用的 back-channel logout 地址，Explore 预发布还没部署也要先有记录）；先定二级子域的证书怎么办（买 Advanced Certificate Manager，还是改成一级子域），再按 architecture.md §4 核对 Cloudflare 的其他设置。
+- Cloudflare 上开代理的 DNS 记录：`id-staging`、`comments-staging`，以及 `explore-staging`（`identity-init` 登记客户端时要解析各应用的 back-channel logout 地址，Explore 预发布还没部署也要先有记录）；先定二级子域的证书怎么办（买 Advanced Certificate Manager，还是改成一级子域），再按 architecture.md §4 核对 Cloudflare 的其他设置。
 - SMTP 服务商的账号；`kite.plus` 的 SPF、DKIM、DMARC。
 - `kite-plus` 组织下预发布用的 GitHub OAuth App；Apple 开发者账号下预发布用的 Services ID 和登录私钥。
 - 一对 age 密钥（私钥离线）。

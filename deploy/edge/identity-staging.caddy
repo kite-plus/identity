@@ -1,8 +1,8 @@
-# id.staging.kite.plus on the Caddy shared with Explore: the staging
+# id-staging.kite.plus on the Caddy shared with Explore: the staging
 # project (IDENTITY_EDGE_ALIAS=identity-staging). Copy into that Caddy's
 # sites/ directory and reload it. While staging is stopped, the site
 # answers 502.
-{$IDENTITY_STAGING_SITE:id.staging.kite.plus} {
+{$IDENTITY_STAGING_SITE:id-staging.kite.plus} {
 	encode zstd gzip
 
 	reverse_proxy {$IDENTITY_STAGING_UPSTREAM:identity-staging:80} {
