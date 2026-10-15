@@ -149,6 +149,31 @@ h3 { font-size: 14px; font-weight: 600; }
 .identity-chip .avatar { width: 28px; height: 28px; font-size: 11px; }
 .identity-chip .text-button { margin-left: auto; font-size: 12px; color: var(--muted-foreground); }
 .identity-chip .email { overflow: hidden; text-overflow: ellipsis; }
+.account-choices { display: flex; flex-direction: column; gap: 10px; }
+.account-choice { display: flex; border: 1px solid var(--border); border-radius: 10px; background: var(--card); transition: border-color 120ms, box-shadow 120ms; }
+.account-choice:hover, .account-choice:focus-within { border-color: var(--input); box-shadow: var(--shadow-sm); }
+.account-choice-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; padding: 14px 10px 14px 16px; border: 0; border-radius: 10px 0 0 10px; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.account-choice-main:focus-visible { outline-offset: -3px; }
+.account-choice-main:disabled { cursor: progress; opacity: .7; }
+.account-choice .seal { width: 38px; height: 38px; border-radius: 9px; font-size: 17px; }
+.account-choice-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.account-choice-text b, .account-choice-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-choice-text b { font-size: 15px; font-weight: 600; }
+.account-choice-text small { color: var(--muted-foreground); font-size: 12.5px; line-height: 1.45; }
+.account-choice-text .account-choice-state { color: var(--faint); }
+.account-choice-go { display: inline-flex; align-items: center; gap: 4px; color: var(--brand); font-size: 13.5px; font-weight: 600; white-space: nowrap; }
+.account-choice-go .icon { width: 15px; height: 15px; transition: transform 120ms; }
+.account-choice-main:hover .account-choice-go .icon { transform: translateX(2px); }
+.account-choice.stale .seal { filter: grayscale(1); opacity: .55; }
+.account-choice.stale .account-choice-go { color: var(--muted-foreground); }
+.account-choice-remove { flex: none; display: grid; place-items: center; width: 40px; border: 0; border-left: 1px dashed var(--dash); border-radius: 0 10px 10px 0; background: none; color: var(--faint); cursor: pointer; }
+.account-choice-remove:hover { color: var(--seal); }
+.account-choice-remove:focus-visible { outline-offset: -3px; }
+.account-choice-remove .icon { width: 15px; height: 15px; }
+.account-another { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin-top: 12px; border: 1px dashed var(--dash); border-radius: 10px; color: var(--muted-foreground); font-size: 13.5px; }
+.account-another:hover { border-color: var(--input); color: var(--foreground); }
+.account-another .icon { width: 16px; height: 16px; }
+.request-site { color: var(--foreground); font: 600 .92em var(--font-mono); word-break: break-all; }
 .alert { display: flex; gap: 9px; align-items: flex-start; border: 1px solid color-mix(in srgb, var(--destructive) 20%, var(--border)); color: var(--destructive); background: var(--error-bg); border-radius: 6px; padding: 10px 12px; font-size: 12px; line-height: 1.7; margin-bottom: 18px; }
 .alert .icon { width: 16px; height: 16px; margin-top: 2px; }
 .state-mark {

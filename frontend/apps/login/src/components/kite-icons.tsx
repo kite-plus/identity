@@ -10,6 +10,7 @@ import {
   Moon,
   Sun,
   UserRoundPlus,
+  X,
 } from "lucide-react";
 export function CheckIcon(props: LucideProps) {
   return <Check {...props} strokeWidth={1.6} absoluteStrokeWidth />;
@@ -40,4 +41,7 @@ export function ClipboardIcon(props: LucideProps) {
 }
 export function UserPlusIcon(props: LucideProps) {
   return <UserRoundPlus {...props} strokeWidth={1.6} absoluteStrokeWidth />;
+}
+export function XIcon(props: LucideProps) {
+  return <X {...props} strokeWidth={1.6} absoluteStrokeWidth />;
 }
