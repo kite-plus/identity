@@ -81,7 +81,9 @@ services:
         condition: service_healthy
 
   login:
-    image: ghcr.io/zitadel/zitadel-login:${ZITADEL_VERSION:-v4.19.4}
+    image: kite-plus/identity-login:${IDENTITY_UI_VERSION:-v4.19.4-kite.1}
+    build:
+      context: ../frontend
     restart: unless-stopped
     user: "0"
     environment:
@@ -91,6 +93,7 @@ services:
       ZITADEL_SESSION_COOKIE_SECRET: ${LOGIN_SESSION_COOKIE_SECRET:?run make dev-up}
       CUSTOM_REQUEST_HEADERS: Host:localhost,X-Forwarded-Proto:http
       EMAIL_VERIFICATION: "true"
+      OTEL_SDK_DISABLED: "true"
     volumes:
       - ${DEV_BOOTSTRAP_DIR:-./out/bootstrap}:/bootstrap:ro
     healthcheck:

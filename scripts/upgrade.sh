@@ -26,7 +26,12 @@ fi
 echo "upgrading ZITADEL $old -> $new ($IDENTITY_ENV)"
 
 docker pull "ghcr.io/zitadel/zitadel:$new"
-docker pull "ghcr.io/zitadel/zitadel-login:$new"
+ui_version=$(cat frontend/upstream-version.txt)
+if [ "$ui_version" != "$new" ]; then
+    echo "login source is $ui_version; update it to $new per frontend/UPSTREAM.md and rerun the auth checks first" >&2
+    exit 1
+fi
+ZITADEL_VERSION=$new compose build login
 
 scripts/backup.sh
 

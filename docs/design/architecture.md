@@ -9,8 +9,8 @@
 ## 0. 定位
 
 - **`id.kite.plus` 是 Kite Plus 所有服务共用的登录**，是基础设施：Explore 先接入（[roadmap.md](roadmap.md) 的 I3），评论服务之后接入，以后的服务也都走它。读者看到的名字是「Kite Plus 账号」。
-- **不自己写身份服务**：自托管一个开源实现，不修改它的代码。自己写要维护认证协议、签名密钥、账号恢复、密码和 Passkey、漏洞响应，一个人维护不起。
-- **本仓库（`kite-plus/identity`）只放**部署配置、可重复执行的初始化脚本、备份与恢复脚本、运维手册、品牌素材和邮件模板。
+- **不自己写身份服务**：自托管 ZITADEL 身份后端，认证协议继续使用官方实现；Login V2 基于固定版本官方源码定制页面。自己写要维护认证协议、签名密钥、账号恢复、密码和 Passkey、漏洞响应，一个人维护不起。
+- **本仓库（`kite-plus/identity`）只放**部署配置、可重复执行的初始化脚本、备份与恢复脚本、运维手册、品牌素材和邮件模板，以及 `frontend` 中的定制 Login V2 和账号管理前端。
 - **它先于一切上线**：各服务的用户键都是它签发的 `(iss, sub)`，issuer 一经公开就不能换，所以 §1 的要求必须在第一次初始化之前全部满足。
 
 ---
@@ -46,7 +46,7 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
 | R3 | 每个应用一个机密客户端，`client_secret_basic`，带 PKCE 时强制校验；ZITADEL 没有授权确认页。每个应用单独一个 project：同一 project 里所有客户端的 ID 都会写进 ID Token 的 `aud` | `[EV]` |
 | R4 | `sid` 是 ZITADEL 的会话 ID；读者在登录界面退出、走 end_session 或会话被管理员结束时，向这次会话登录过的每个应用发 back-channel logout。**会话自然过期时不发** | `[EV]` |
 | R5 | Actions v2 把 `user.removed`、`user.deactivated`、`user.reactivated`、`user.locked`、`user.unlocked` 推给各应用，HMAC 签名；各应用只在停用时暂停账号，锁定和解锁只作通知（密码不再触发锁定，§5）。**只投递一次，失败不重试**，所以每小时对账是必需的：每个应用一个只读机器用户（`IAM_OWNER_VIEWER`），用 admin `ListEvents` 按时间游标取事件，再查用户当前状态。这个角色能读到所有推送目标的签名密钥，应用只能把推送当提示，删除或暂停前先查一次用户 | `[EV]` |
-| R6 | 注册、邮箱验证、找回密码、Passkey 在登录界面；账号页是 ZITADEL 控制台的 `/ui/console/users/me`：改资料、换邮箱、改密码、Passkey 和第二因素、删号，各应用的「管理／删除 Kite Plus 账号」都链到这里（[README](../../README.md#account-page)）。控制台用品牌设置里的 Logo 和图标，页面标题由反向代理改成 Kite Plus，配色和个别说明文字仍是 ZITADEL 的，改不了；以后是否换成自建账号页 `[待定]`（[roadmap.md §6](roadmap.md#6-待定事项)）。读者删号需要 `ORG_USER_SELF_MANAGER` 角色，ZITADEL 默认谁都不给：`identity-init` 给每个读者授予，新注册的读者由定时任务补上（[runbooks](../runbooks/README.md)）。关联 GitHub 在用 GitHub 登录时按已验证邮箱自动关联 | `[EV]`，GitHub 部分待 I1 |
+| R6 | 登录、注册、邮箱验证、找回密码、Passkey 沿用官方 Login V2 的认证流程，并接入 Kite Plus v2 样式。自建账号页在 `/ui/v2/login/account`，包括资料、邮箱、密码、Passkey、TOTP、登录设备和删除账号；旧 `/ui/console/users/me` 入口重定向到新账号页。账号操作仅使用已签名、已完成主因素和所需 MFA 的当前用户会话令牌；敏感操作要求 10 分钟内验证身份。删除账号继续由 `ORG_USER_SELF_MANAGER` 控制，新注册的读者由现有定时任务补授角色。 | 已实现，已通过本地认证与账号操作回归 |
 | R7 | 登录保持 30 天（密码、Passkey、GitHub 的检查有效期都是 720h），不滑动续期。登录界面 v2 的 `sessions` Cookie 不带 Max-Age，关掉浏览器就没了（[zitadel#12434](https://github.com/zitadel/zitadel/issues/12434)），反向代理用 njs 给它补上 30 天（`deploy/nginx/njs`）；上游修好后删掉这段 | `[EV]`（代理改写用模拟上游验证） |
 | R8 | 默认语言中文，允许中英文；品牌色和 Logo；邮件文案和登录界面里写着 Zitadel 的几处文字由 `config/base.yaml` 覆盖。登录界面注册时不带语言，ZITADEL 记为 `und`，邮件就退回英文：反向代理在注册表单经过时记下浏览器的语言（登录界面的语言切换优先，其次 `Accept-Language`，中英文以外按中文），再由一个 Actions v2 调用目标在创建用户时填上 `preferredLanguage`，没记到的一律中文 | `[EV]`：中文浏览器注册收到中文验证邮件，切到英文的浏览器收到英文 |
 | R9 | 管理员在 Kite Plus Operators 组织里，这个组织单独的登录策略强制 MFA；读者在 Kite Plus 组织（默认组织） | 已配置，I2 实际启用 |

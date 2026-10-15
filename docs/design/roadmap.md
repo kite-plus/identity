@@ -126,5 +126,5 @@ I3 完成后，评论服务再开工（[comments roadmap.md](https://github.com/
 | ~~账号锁定被滥用时的处理~~ | [architecture.md §5](architecture.md#5-运维) | 2026-10-11 定：关掉密码锁定，靠单 IP 和合计限流 |
 | 删号时撤销 Apple 令牌：ZITADEL 和 Logto 都不做。思路：一个订阅 `user.removed` 的小工具，删号时调用 Apple 的撤销接口；ZITADEL 不保存 Apple 的令牌，要先确认能从哪里拿到可撤销的令牌（比如登录时由这个小工具自己保存，或删号前让读者用 Apple 再授权一次） | [architecture.md §1.1](architecture.md#11-落实情况) 的 R11 | I1 定方案并用 Apple 开发者账号实测；Kite 应用切换到统一登录（I3）之前必须上线 |
 | 备份异地存放位置：另一个地方的服务器还是对象存储（脚本已能经 rclone 复制过去） | [architecture.md §5](architecture.md#5-运维) | I2 开工前 |
-| 账号页是否换成自建页面：现在用 ZITADEL 控制台的 `/ui/console/users/me`，配色和个别说明文字改不了 | [architecture.md §1.1](architecture.md#11-落实情况) 的 R6 | Kite 应用的「删除 Kite Plus 账号」入口上线（I3）之前评估；读者反馈难用时提前 |
+| ~~账号页是否换成自建页面~~ | [architecture.md §1.1](architecture.md#11-落实情况) 的 R6 | 2026-10-12 定：按确认的 v2 设计实现 `/ui/v2/login/account`，保留官方认证流程；旧入口重定向 |
 | Explore 过渡期的截止时间 | [Explore accounts.md §1](https://github.com/kite-plus/explore/blob/main/docs/design/accounts.md#1-登录与会话) | I3 开工前 |

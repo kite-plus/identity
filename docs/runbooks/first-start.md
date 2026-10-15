@@ -88,7 +88,7 @@
 
 7. 验收：
    - 在中文浏览器里走一遍注册，验证邮件应为中文；把登录界面切到 English 再注册一个，邮件应为英文（新读者的语言，architecture.md §1.1 R8）。
-   - 登录、退出；5 分钟后在 `https://<域名>/ui/console/users/me` 能看到「删除账户」，标题是 Kite Plus。
+   - 登录、退出；5 分钟后在 `https://<域名>/ui/v2/login/account/delete` 能删除账号；旧地址 `/ui/console/users/me` 应跳到 `/ui/v2/login/account`。
    - 在自己的电脑上 `curl -X POST https://<域名>/ui/v2/login/register` 连发 12 次，第 12 次应为 429；服务器上 `cd deploy && docker compose logs --tail 20 proxy` 里这些请求的客户端是自己电脑的公网地址，不是 Cloudflare 或 `172.30.10.x` 的地址，说明读者地址一路传到了 nginx。`https://<域名>/ui/login/loginname` 应为 404。
    - 别的 Docker 网络够不着身份服务的 nginx（下面的命令必须超时失败）。Docker 默认丢弃不同网络之间的流量；Docker 的 iptables 被关掉时这里会通，别的网络上的容器（比如抓任意网址的 Explore worker）就能直接连到 nginx，还能冒充读者的地址：
 

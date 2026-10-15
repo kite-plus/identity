@@ -6,3 +6,15 @@
 /dev/out/
 .DS_Store
 /deploy/secrets/
+
+/frontend/node_modules/
+/frontend/**/node_modules/
+/frontend/**/.next/
+/frontend/packages/zitadel-client/dist/
+/frontend/packages/zitadel-proto/es/
+/frontend/packages/zitadel-proto/cjs/
+/frontend/packages/zitadel-proto/types/
+/frontend/**/coverage/
+
+/frontend/**/.env.prod
+/frontend/**/*.tsbuildinfo

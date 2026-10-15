@@ -1,0 +1,62 @@
+export const kiteMessages = {
+  zh: {
+    common: { title: "Kite Plus 账号" },
+    loginname: {
+      title: "登录 Kite Plus",
+      description: "使用你的账号，继续阅读与交流。",
+      register: "创建账号",
+      labels: { usernameOrEmail: "邮箱或用户名", loginname: "邮箱或用户名" },
+    },
+    password: {
+      verify: {
+        title: "输入你的密码",
+        description: "欢迎回来，输入密码继续。",
+        submit: "登录",
+        resetPassword: "忘记密码？",
+      },
+      set: { title: "设置新密码", description: "使用较长的独特密码，避免与其他网站重复。" },
+    },
+    register: { title: "创建 Kite Plus 账号", description: "一个账号，连接阅读与交流。" },
+    accounts: { title: "选择一个账号", description: "使用已登录的账号继续。", addAnother: "使用其他账号" },
+    signedin: { title: "登录成功", manageAccount: "管理账号", description: "你已登录 Kite Plus，可以继续使用应用。" },
+    logout: {
+      title: "退出 Kite Plus？",
+      description: "选择要退出的账号。关联应用会结束对应的登录会话。",
+      success: { title: "你已退出账号", description: "你的 Kite Plus 登录会话已结束。" },
+    },
+  },
+  en: {
+    common: { title: "Kite Plus Account" },
+    loginname: {
+      title: "Sign in to Kite Plus",
+      description: "Use your account to keep reading and join the conversation.",
+      register: "Create an account",
+      labels: { usernameOrEmail: "Email or username", loginname: "Email or username" },
+    },
+    password: {
+      verify: {
+        title: "Enter your password",
+        description: "Welcome back. Enter your password to continue.",
+        submit: "Sign in",
+        resetPassword: "Forgot password?",
+      },
+      set: { title: "Set a new password", description: "Use a long, unique password you don't use on other sites." },
+    },
+    register: { title: "Create your Kite Plus account", description: "One account for reading and conversation." },
+    accounts: {
+      title: "Choose an account",
+      description: "Continue with an account you've signed in to.",
+      addAnother: "Use another account",
+    },
+    signedin: {
+      title: "You're signed in",
+      manageAccount: "Manage your account",
+      description: "You're signed in to Kite Plus and ready to continue.",
+    },
+    logout: {
+      title: "Sign out of Kite Plus?",
+      description: "Choose an account to sign out. Connected apps will end the linked session.",
+      success: { title: "You're signed out", description: "Your Kite Plus session has ended." },
+    },
+  },
+};

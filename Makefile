@@ -20,7 +20,7 @@ dev-up: dev/.env
 	@scripts/dev-env.sh dev/.env
 	@mkdir -p dev/out/bootstrap
 	@$(DEV_ENV) && scripts/check-port.sh "$$IDENTITY_DEV_PORT" identity-dev
-	$(DEV_COMPOSE) up -d --wait
+	$(DEV_COMPOSE) up -d --build --wait
 	@$(DEV_ENV) && echo "identity provider: http://localhost:$$IDENTITY_DEV_PORT  mail: http://localhost:8025"
 
 dev-init: dev/.env

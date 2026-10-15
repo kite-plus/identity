@@ -1,0 +1,15 @@
+{
+  "name": "@kite-plus/identity-frontend",
+  "private": true,
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "generate": "pnpm --filter @zitadel/proto generate",
+    "build:client": "pnpm --filter @zitadel/client build",
+    "build": "pnpm generate && pnpm build:client && pnpm --filter @zitadel/login build",
+    "check": "pnpm --filter @zitadel/login exec tsc --noEmit",
+    "test": "pnpm --filter @zitadel/login test-unit"
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "^1.69.0"
+  }
+}

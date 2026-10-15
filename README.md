@@ -77,11 +77,12 @@ The ZITADEL container reaches the services through `host.docker.internal`. On ma
 
 ### Account page
 
-Readers manage their Kite Plus Account at **`<issuer>/ui/console/users/me`**: `http://localhost:8091/ui/console/users/me` in dev, `https://id-staging.kite.plus/ui/console/users/me` and `https://id.kite.plus/ui/console/users/me` later. Link "Kite Plus 账号" / "管理 Kite Plus 账号" and "删除 Kite Plus 账号" there; it signs the reader in first if needed.
+Readers manage their Kite Plus Account at **`<issuer>/ui/v2/login/account`**: `http://localhost:8091/ui/v2/login/account` in dev, `https://id.kite.plus/ui/v2/login/account` in production. Link "Kite Plus 账号" / "管理 Kite Plus 账号" there and "删除 Kite Plus 账号" to `/ui/v2/login/account/delete`; both sign the reader in first if needed. Old links to `/ui/console/users/me` redirect to it; operators keep the console at `/ui/console`.
 
-- There they change their name, email and password, add passkeys and second factors, see linked GitHub or Apple accounts, and delete the account: "删除账户" / "Delete account" at the bottom of the general tab. Deletion pushes `user.removed` to every service.
-- The delete button only appears once the reader holds the self-deletion role. `identity-init` grants it to every reader; production runs that step every five minutes, so a reader who signed up a moment ago may have to wait. In dev, run `make dev-readers` (or `make dev-init`) after signing up a new test reader.
-- The page is ZITADEL's console. It shows the Kite Plus logo and icon from the branding settings and the tab title "Kite Plus • Account", but keeps ZITADEL's own colours, and a few help texts still mention Zitadel; the label policy cannot change those.
+- The page is our own (`frontend/`): profile, email verification, password, passkeys, TOTP, signed-in devices and account deletion, in Chinese and English, light and dark, desktop and phone.
+- Sign-in itself stays the pinned upstream Login V2 flow. Account actions run on the server for the user of the verified session only; changing security settings, signing out other devices and deleting the account need a sign-in within the last 10 minutes.
+- Deleting needs the self-deletion role, which `identity-init` grants to every reader; production runs that step every five minutes, so a reader who signed up a moment ago may have to wait. In dev, run `make dev-readers` after signing up a new test reader. Deletion still pushes `user.removed`, and signing out a device still sends back-channel logout.
+- Building and upgrading the frontend: [frontend/README.md](frontend/README.md).
 
 ### New readers' language
 

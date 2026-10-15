@@ -6,7 +6,7 @@
 
 - 订阅 [ZITADEL 安全公告](https://github.com/zitadel/zitadel/security/advisories) 和 [Releases](https://github.com/zitadel/zitadel/releases)（GitHub 的 Watch → Custom → Releases、Security alerts）。
 - 公告的严重级别为 critical 时，从发布时间起算 72 小时：当天在预发布上升级并验证，第二天上生产。
-- API 和登录界面两个镜像（`zitadel`、`zitadel-login`）必须同一个版本，`ZITADEL_VERSION` 一个变量管两个。
+- 后端镜像版本 `ZITADEL_VERSION` 必须与定制登录源码 `frontend/upstream-version.txt` 一致。先更新上游源码与协议、保留 Kite Plus 页面和账号权限修改、完成回归，再升级后端；登录镜像由本仓库构建，版本用 `IDENTITY_UI_VERSION` 标识。`scripts/upgrade.sh` 会检查源码版本，避免把新后端与旧前端混用。
 - 一并检查 nginx、PostgreSQL 镜像的补丁版本（只升补丁号；PostgreSQL 大版本升级另做方案）。前面的 Caddy 是 Explore 的，随 Explore 升级。
 
 ## 步骤
