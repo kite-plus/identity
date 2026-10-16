@@ -28,8 +28,11 @@ type Config struct {
 	PasswordComplexity PasswordComplexity `yaml:"passwordComplexity"`
 	Privacy            Privacy            `yaml:"privacy"`
 	SMTP               SMTP               `yaml:"smtp"`
-	Branding           Branding           `yaml:"branding"`
-	Messages           []Message          `yaml:"messages"`
+	// Mailer, when set, replaces SMTP: ZITADEL posts each mail to
+	// identity-mailer, which renders it in the Kite Plus look and sends it.
+	Mailer   Mailer    `yaml:"mailer"`
+	Branding Branding  `yaml:"branding"`
+	Messages []Message `yaml:"messages"`
 	// LoginTexts overrides login UI strings per locale, keyed like the
 	// login app's locales/*.json.
 	LoginTexts        map[string]map[string]any `yaml:"loginTexts"`
@@ -107,6 +110,11 @@ type Privacy struct {
 	HelpLink     string `yaml:"helpLink"`
 	SupportEmail string `yaml:"supportEmail"`
 	DocsLink     string `yaml:"docsLink"`
+}
+
+type Mailer struct {
+	Description string `yaml:"description"`
+	Endpoint    string `yaml:"endpoint"`
 }
 
 type SMTP struct {
@@ -326,6 +334,8 @@ func (c *Config) validate() error {
 		return fmt.Errorf("issuer must be an absolute URL, got %q", c.Issuer)
 	case c.Orgs.Operators == "" || c.Orgs.Readers == "":
 		return fmt.Errorf("orgs.operators and orgs.readers are required")
+	case c.Mailer.Endpoint != "" && c.Mailer.Description == "":
+		return fmt.Errorf("mailer.description is required with mailer.endpoint")
 	}
 	seen := map[string]bool{}
 	for i, a := range c.Apps {

@@ -4,14 +4,11 @@ extends: base.yaml
 environment: production
 issuer: https://id.kite.plus
 
-smtp:
-  description: smtp
-  host: ${SMTP_HOST}
-  tls: true
-  user: ${SMTP_USER}
-  password: ${SMTP_PASSWORD}
-  senderAddress: ${SMTP_FROM:-no-reply@id.kite.plus}
-  senderName: Kite Plus 账号
+mailer:
+  # identity-mailer on the compose network (deploy/mailer); it sends
+  # through MAILER_SMTP_URL.
+  description: mailer
+  endpoint: http://mailer:8080/zitadel/email
 
 apps:
   - key: explore

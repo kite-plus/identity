@@ -8,14 +8,10 @@ operatorLoginPolicy:
   # Local admins should not need an authenticator app.
   forceMfa: false
 
-smtp:
-  description: mailpit
-  host: mailpit:1025
-  tls: false
-  user: ""
-  password: ""
-  senderAddress: noreply@kite.plus
-  senderName: Kite Plus 账号
+mailer:
+  # identity-mailer (dev/docker-compose.yaml) renders mail into Mailpit.
+  description: mailer
+  endpoint: http://mailer:8080/zitadel/email
 
 apps:
   - key: explore

@@ -12,6 +12,7 @@ There is no public deployment yet; staging and production will run on the US ser
 |---|---|
 | `config/` | Declarative instance settings: `base.yaml` plus one file per environment (`dev`, `staging`, `production`) |
 | `cmd/identity-init` | Applies `config/` to an instance through the ZITADEL API; safe to re-run |
+| `cmd/identity-mailer` | ZITADEL's HTTP email provider: lays account mail out in the Kite Plus look and sends it over SMTP (`deploy/mailer`) |
 | `dev/` | The local stack (`identity-dev` compose project) |
 | `deploy/` | Compose files for staging and production (standalone and edge mode), nginx config, Caddy site files for the edge, `.env.example` |
 | `scripts/` | Backup, restore, upgrade, dev helpers |

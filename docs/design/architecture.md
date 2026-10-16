@@ -139,7 +139,7 @@ ZITADEL v4.19.4 上的做法。`[EV]` 表示本仓库的 `make dev-test` 或 I0 
   - Email Address Obfuscation（Cloudflare 默认开）和 Rocket Loader 会改写 HTML、插入 Cloudflare 自己的脚本：登录界面和账号页上满是邮箱地址，评论的 iframe 和控制台只允许自己的脚本，iframe 还要求 Trusted Types。2026-10-11 起整个区域都关掉了 Email Address Obfuscation，Rocket Loader 本来就关着；上线前仍在浏览器里看一遍登录页和评论组件。
   - 服务之间的调用也经过 Cloudflare（见上文「入口」），Bot Fight Mode、Under Attack 和会弹质询的 WAF 规则会把它们挡掉，不要对这几个主机名开。
   - 不需要 WebSocket，也不需要开 gRPC：初始化工具和各应用用 ZITADEL 的 REST 接口，nginx 也只按 HTTP/1.1 转发。
-- **发信**：飞书邮箱的 SMTP（`smtp.feishu.cn:465`，2026-10-11 定），发到 QQ、163 等国内邮箱的送达率好。飞书只允许以登录的邮箱发信，所以 `SMTP_FROM` 要和 `SMTP_USER` 是同一个地址：上线时先用维护者已有的飞书邮箱，`kite.plus` 加进飞书、开好 `noreply@kite.plus` 后换过去（改 `.env` 再跑一遍 `identity-init`）。显示名始终是「Kite Plus 账号」。换到 `kite.plus` 时给它配好 SPF、DKIM 和 DMARC，否则 QQ 邮箱、163 邮箱很可能直接拒收。SMTP 密码只由维护者在服务器上写进 `deploy/.env`，不经聊天工具。
+- **发信**：账号邮件由 `mailer` 容器（`cmd/identity-mailer`）发出，它是 ZITADEL 的 HTTP 发信方式（2026-10-16 定）。ZITADEL 只能改邮件的文字、颜色和标志，改不了版式，所以由 `mailer` 排版：ZITADEL 把每封邮件的文字和验证码、链接签名后 POST 过来，`mailer` 核对签名（`identity-init` 建发信配置时把签名密钥写进 `secrets/apps/mailer`），按纸鸢版式排成 HTML 和纯文本，再经 SMTP 发出。`config/base.yaml` 的邮件文字和版式的对应关系写在文件里。页头的小风筝和卡片上的风筝作为内嵌图片随信发出，打开邮件不访问任何服务器，QQ 邮箱也不会拦图。ZITADEL 一次调用最多等 5 秒，超时会重试，`mailer` 4.5 秒内发不出就放弃，免得读者收到两封。SMTP 用 Resend（`smtps://resend:<key>@smtp.resend.com:465`，key 只有发信权限、只能发 `id.kite.plus`），发件人「Kite Plus 账号 <no-reply@id.kite.plus>」；`id.kite.plus` 配好 SPF 和 DKIM，`kite.plus` 配 DMARC，否则 QQ 邮箱、163 邮箱会拒收或标「发件人无法验证」。SMTP 地址只由维护者在服务器上用 `kite-set-smtp` 写进 `deploy/.env`，不经聊天工具。
 - **GitHub 登录**（延后，见 §2）：开启时在 `kite-plus` 组织下注册 OAuth App，生产和预发布各一个，回调指向各自的 `id` 域名。
 - **Apple 登录**：在 Apple 开发者账号下建 Services ID 和用于登录的私钥，生产和预发布各一个 Services ID，回调指向各自的 `id` 域名；`noreply@kite.plus` 所在的发信域名登记到 Apple 的邮件转发服务（§2）。
 - **密钥**：

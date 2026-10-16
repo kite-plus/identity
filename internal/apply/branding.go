@@ -15,6 +15,9 @@ import (
 
 func (a *Applier) smtp(ctx context.Context) error {
 	c := a.cfg.SMTP
+	if a.cfg.Mailer.Endpoint != "" {
+		return nil
+	}
 	if c.Host == "" {
 		a.note("smtp not configured, skipped")
 		return nil

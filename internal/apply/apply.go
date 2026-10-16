@@ -52,6 +52,7 @@ func (a *Applier) Run(ctx context.Context) (int, error) {
 		{"lockout and password policy", a.passwordPolicies},
 		{"privacy policy", a.privacyPolicy},
 		{"smtp", a.smtp},
+		{"mailer", a.mailer},
 		{"branding", a.branding},
 		{"message texts", a.messages},
 		{"login texts", a.loginTexts},

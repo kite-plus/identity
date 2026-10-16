@@ -135,112 +135,115 @@ loginTexts:
     idp:
       signInWithZitadel: Sign in with Kite Plus Account
 
+# Mail texts. identity-mailer lays them out as: preHeader the small label,
+# title the heading, text the body, footerText the note under the dashed
+# rule; the code, when there is one, gets its own box.
 messages:
   - type: verifyemail
     language: zh
-    title: Kite Plus 账号 - 验证邮箱
+    title: 验证你的邮箱
     preHeader: 验证邮箱
     subject: 验证你的 Kite Plus 账号邮箱
-    greeting: 你好，{{.DisplayName}}：
-    text: 请点击下面的按钮验证这个邮箱（验证码 {{.Code}}）。如果不是你本人操作，请忽略这封邮件。
+    greeting: "你好，{{.DisplayName}}："
+    text: 点下面的按钮验证这个邮箱；如果你还停在验证页面，也可以输入验证码。验证之后，就能用这个账号登录 Explore 和 Kite 评论。
     buttonText: 验证邮箱
-    footerText: Kite Plus 账号 · id.kite.plus
+    footerText: 不是你本人操作？忽略这封邮件即可。
   - type: verifyemail
     language: en
-    title: Kite Plus Account - Verify email
+    title: Verify your email
     preHeader: Verify email
     subject: Verify your Kite Plus Account email
-    greeting: Hello {{.DisplayName}},
-    text: Please use the button below to verify this email address (code {{.Code}}). If you did not request this, ignore this email.
+    greeting: "Hello {{.DisplayName}},"
+    text: Use the button below to verify this address, or enter the code on the verification page. Once it is verified, you can sign in to Explore and Kite Comments with this account.
     buttonText: Verify email
-    footerText: Kite Plus Account · id.kite.plus
+    footerText: "Didn't request this? You can ignore this email."
   - type: passwordreset
     language: zh
-    title: Kite Plus 账号 - 重置密码
+    title: 重置你的密码
     preHeader: 重置密码
     subject: 重置你的 Kite Plus 账号密码
-    greeting: 你好，{{.DisplayName}}：
-    text: 我们收到了重置密码的请求。请点击下面的按钮重置密码（验证码 {{.Code}}）。如果不是你本人操作，请忽略这封邮件。
-    buttonText: 重置密码
-    footerText: Kite Plus 账号 · id.kite.plus
+    greeting: "你好，{{.DisplayName}}："
+    text: 我们收到了重置 Kite Plus 账号密码的请求。点下面的按钮设置新密码；如果你还停在重置页面，也可以直接输入验证码。
+    buttonText: 设置新密码
+    footerText: 没有申请重置？忽略这封邮件即可，你的密码不会改变。
   - type: passwordreset
     language: en
-    title: Kite Plus Account - Reset password
+    title: Reset your password
     preHeader: Reset password
     subject: Reset your Kite Plus Account password
-    greeting: Hello {{.DisplayName}},
-    text: We received a request to reset your password. Please use the button below (code {{.Code}}). If you did not request this, ignore this email.
-    buttonText: Reset password
-    footerText: Kite Plus Account · id.kite.plus
+    greeting: "Hello {{.DisplayName}},"
+    text: We received a request to reset the password of your Kite Plus Account. Use the button below to set a new one, or enter the code on the reset page.
+    buttonText: Set a new password
+    footerText: "Didn't ask for this? Ignore this email and your password stays the same."
   - type: password_change
     language: zh
-    title: Kite Plus 账号 - 密码已修改
+    title: 你的密码已修改
     preHeader: 密码已修改
     subject: 你的 Kite Plus 账号密码已修改
-    greeting: 你好，{{.DisplayName}}：
-    text: 你的 Kite Plus 账号密码刚刚被修改。如果不是你本人操作，请立即重置密码。
-    buttonText: 登录
-    footerText: Kite Plus 账号 · id.kite.plus
+    greeting: "你好，{{.DisplayName}}："
+    text: 你的 Kite Plus 账号密码刚刚被修改。
+    buttonText: 登录账号
+    footerText: 不是你本人操作？请立即重置密码，并检查账号里的登录设备。
   - type: password_change
     language: en
-    title: Kite Plus Account - Password changed
+    title: Your password was changed
     preHeader: Password changed
     subject: Your Kite Plus Account password was changed
-    greeting: Hello {{.DisplayName}},
-    text: The password of your Kite Plus Account was just changed. If this was not you, reset your password right away.
+    greeting: "Hello {{.DisplayName}},"
+    text: The password of your Kite Plus Account was just changed.
     buttonText: Sign in
-    footerText: Kite Plus Account · id.kite.plus
+    footerText: "Not you? Reset your password right away and check the devices signed in to your account."
   - type: init
     language: zh
-    title: Kite Plus 账号 - 完成注册
+    title: 完成你的账号设置
     preHeader: 完成注册
     subject: 完成你的 Kite Plus 账号注册
-    greeting: 你好，{{.DisplayName}}：
-    text: 你的 Kite Plus 账号已经创建，登录名是 {{.PreferredLoginName}}。请点击下面的按钮完成设置（验证码 {{.Code}}）。如果不是你本人操作，请忽略这封邮件。
+    greeting: "你好，{{.DisplayName}}："
+    text: "你的 Kite Plus 账号已经创建，登录名是 {{.PreferredLoginName}}。点下面的按钮完成设置。"
     buttonText: 完成设置
-    footerText: Kite Plus 账号 · id.kite.plus
+    footerText: 不是你本人操作？忽略这封邮件即可。
   - type: init
     language: en
-    title: Kite Plus Account - Finish sign-up
+    title: Finish setting up your account
     preHeader: Finish sign-up
     subject: Finish setting up your Kite Plus Account
-    greeting: Hello {{.DisplayName}},
-    text: Your Kite Plus Account was created with the login name {{.PreferredLoginName}}. Please use the button below to finish (code {{.Code}}). If you did not request this, ignore this email.
+    greeting: "Hello {{.DisplayName}},"
+    text: "Your Kite Plus Account was created with the login name {{.PreferredLoginName}}. Use the button below to finish setting it up."
     buttonText: Finish setup
-    footerText: Kite Plus Account · id.kite.plus
+    footerText: "Didn't request this? You can ignore this email."
   - type: verifyemailotp
     language: zh
-    title: Kite Plus 账号 - 验证码
+    title: 你的登录验证码
     preHeader: 验证码
     subject: 你的 Kite Plus 账号验证码
-    greeting: 你好，{{.DisplayName}}：
-    text: 你的验证码是 {{.OTP}}，五分钟内有效。如果不是你本人操作，请忽略这封邮件。
+    greeting: "你好，{{.DisplayName}}："
+    text: 在登录页面输入下面的验证码，五分钟内有效。
     buttonText: 验证
-    footerText: Kite Plus 账号 · id.kite.plus
+    footerText: 不是你本人在登录？忽略这封邮件即可，并考虑修改密码。
   - type: verifyemailotp
     language: en
-    title: Kite Plus Account - Verification code
-    preHeader: Verification code
+    title: Your sign-in code
+    preHeader: Sign-in code
     subject: Your Kite Plus Account code
-    greeting: Hello {{.DisplayName}},
-    text: Your code is {{.OTP}}. It is valid for five minutes. If you did not request it, ignore this email.
+    greeting: "Hello {{.DisplayName}},"
+    text: Enter this code on the sign-in page. It is valid for five minutes.
     buttonText: Verify
-    footerText: Kite Plus Account · id.kite.plus
+    footerText: "Not you signing in? Ignore this email, and consider changing your password."
   - type: passwordless_registration
     language: zh
-    title: Kite Plus 账号 - 添加通行密钥
-    preHeader: 添加通行密钥
+    title: 添加通行密钥
+    preHeader: 通行密钥
     subject: 为你的 Kite Plus 账号添加通行密钥
-    greeting: 你好，{{.DisplayName}}：
-    text: 我们收到了添加通行密钥（Passkey）的请求。请点击下面的按钮在这台设备上添加。如果不是你本人操作，请忽略这封邮件。
+    greeting: "你好，{{.DisplayName}}："
+    text: 我们收到了为这个账号添加通行密钥（Passkey）的请求。在要添加的设备上点下面的按钮。
     buttonText: 添加通行密钥
-    footerText: Kite Plus 账号 · id.kite.plus
+    footerText: 不是你本人操作？忽略这封邮件即可。
   - type: passwordless_registration
     language: en
-    title: Kite Plus Account - Add a passkey
-    preHeader: Add a passkey
+    title: Add a passkey
+    preHeader: Passkey
     subject: Add a passkey to your Kite Plus Account
-    greeting: Hello {{.DisplayName}},
-    text: We received a request to add a passkey. Please use the button below on the device you want to add. If you did not request this, ignore this email.
+    greeting: "Hello {{.DisplayName}},"
+    text: We received a request to add a passkey to this account. Use the button below on the device you want to add.
     buttonText: Add passkey
-    footerText: Kite Plus Account · id.kite.plus
+    footerText: "Didn't request this? You can ignore this email."

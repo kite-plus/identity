@@ -37,7 +37,7 @@
 
 ## 发信失败
 
-读者收不到验证邮件：先看 `docker compose logs zitadel | grep smtp`。`535 Authentication credentials invalid` 说明 ZITADEL 存的密码不对：v4.19.4 单独改 SMTP 密码不会生效，`identity-init` 在密码变化时删除并重建发信配置，换 key 一律用服务器上的 `kite-set-smtp`。再到 Resend 的 Emails 页看有没有发出、是否被退回；QQ、163 拒收时检查 `id.kite.plus` 的 DKIM 和 `kite.plus` 的 DMARC。读者说点了「忘记密码」却没收到信，也可能是这个邮箱还没有 Kite Plus 账号：为了不暴露账号是否存在，页面照样显示已发送。
+读者收不到验证邮件：先看 `docker compose logs mailer`。`send failed` 带着 SMTP 的错误，`535` 说明 `MAILER_SMTP_URL` 里的 key 不对，用服务器上的 `kite-set-smtp` 换 key 后重建 `mailer`；`rejected unsigned call` 说明签名密钥对不上，重跑 `identity-init`（它会写出新的 `secrets/apps/mailer/signing-key`）；`signing key unavailable` 说明还没跑过 `identity-init`。`mailer` 没有日志，再看 `docker compose logs zitadel | grep -i email`，ZITADEL 连不上 `mailer` 时会在这里报错。再到 Resend 的 Emails 页看有没有发出、是否被退回；QQ、163 拒收时检查 `id.kite.plus` 的 DKIM 和 `kite.plus` 的 DMARC。读者说点了「忘记密码」却没收到信，也可能是这个邮箱还没有 Kite Plus 账号：为了不暴露账号是否存在，页面照样显示已发送。
 
 ## 记录
 

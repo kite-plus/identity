@@ -125,6 +125,22 @@ services:
       login:
         condition: service_healthy
 
+  mailer:
+    image: kite-plus/identity-mailer:${IDENTITY_MAILER_VERSION:-1}
+    build:
+      context: ..
+      dockerfile: deploy/mailer/Dockerfile
+    restart: unless-stopped
+    environment:
+      MAILER_SMTP_URL: smtp://mailpit:1025
+      MAILER_FROM: Kite Plus 账号 <noreply@kite.plus>
+      MAILER_SITE_URL: http://localhost:${IDENTITY_DEV_PORT:-8091}
+      MAILER_HOSTNAME: localhost
+    volumes:
+      - ${DEV_OUT_DIR:-./out}/mailer:/secrets:ro
+    depends_on:
+      - mailpit
+
   mailpit:
     image: axllent/mailpit:v1.31.4
     restart: unless-stopped

@@ -173,6 +173,24 @@ services:
       zitadel:
         condition: service_healthy
 
+  # ZITADEL's HTTP email provider (config mailer): renders account mail in
+  # the Kite Plus look and sends it through MAILER_SMTP_URL. identity-init
+  # writes the provider's signing key to secrets/apps/mailer.
+  mailer:
+    image: kite-plus/identity-mailer:${IDENTITY_MAILER_VERSION:-1}
+    build:
+      context: ..
+      dockerfile: deploy/mailer/Dockerfile
+    restart: unless-stopped
+    environment:
+      MAILER_SMTP_URL: ${MAILER_SMTP_URL:-}
+      MAILER_FROM: ${MAILER_FROM:-Kite Plus 账号 <no-reply@id.kite.plus>}
+      MAILER_REPLY_TO: ${MAILER_REPLY_TO:-}
+      MAILER_SITE_URL: https://${IDENTITY_DOMAIN:?}
+      MAILER_HOSTNAME: ${IDENTITY_DOMAIN:?}
+    volumes:
+      - ${SECRETS_DIR:-./secrets}/apps/mailer:/secrets:ro
+
 networks:
   default:
     # IPv6 off: ULA addresses fall in fc00::/7, which the deny list keeps.
