@@ -66,6 +66,7 @@ services:
       # The default deny list blocks private and loopback ranges, which
       # covers host.docker.internal; dev targets live there.
       ZITADEL_HTTPCLIENT_DENYLIST: 169.254.0.0/16
+      ZITADEL_SYSTEMDEFAULTS_MULTIFACTORS_OTP_ISSUER: Kite Plus
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:

@@ -284,11 +284,14 @@ h3 { font-size: 14px; font-weight: 600; }
   .auth-card, .auth-card.wide { padding: 28px 24px; }
   .site-footer { padding: 20px; flex-direction: column; gap: 10px; }
   .account-main { padding: 24px 20px 48px; display: flex; flex-direction: column; gap: 28px; }
-  .account-nav { position: static; flex-direction: row; flex-wrap: wrap; width: 100%; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
+  .account-nav { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 6px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
   .nav-caption, .nav-separator, .account-nav .logout-nav { display: none; }
-  .nav-link { flex: 1; justify-content: center; padding: 8px; min-width: 94px; font-size: 12px; }
+  .nav-link { justify-content: flex-start; gap: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.35; }
   .account-content { width: 100%; }
-  .settings-row { gap: 12px; }
+  /* The action drops below the text, lined up with it (icon 38px + gap 13px). */
+  .settings-row { flex-wrap: wrap; gap: 12px; }
+  .settings-row > .row-leading { flex: 1 1 100%; }
+  .settings-row > :not(.row-leading) { margin-left: 51px; }
   .input { font-size: 16px; height: 44px; }
   .button { min-height: 44px; }
   .icon-button { width: 44px; height: 44px; }
@@ -336,6 +339,13 @@ h3 { font-size: 14px; font-weight: 600; }
 .page-heading h1 { text-align: left; }
 .kite-auth-form form > div:last-child:has(> .button[type="submit"]) { flex-direction: column; gap: 14px; margin-top: 8px; }
 .kite-auth-form form > div:last-child:has(> .button[type="submit"]) > .kite-back { order: 2; width: 100%; }
+/* Upstream action rows (secondary, spacer, primary) stack like the sign-in form: primary on top, all full width. */
+.kite-auth-form .flex-row:has(> .flex-grow):has(> .button, > a > .button) { flex-direction: column; align-items: stretch; gap: 14px; }
+.kite-auth-form .flex-row:has(> .flex-grow):has(> .button, > a > .button) > .flex-grow { display: none; }
+.kite-auth-form .flex-row:has(> .flex-grow):has(> .button, > a > .button) > a { display: block; }
+.kite-auth-form .flex-row:has(> .flex-grow):has(> .button, > a > .button) .button { width: 100%; }
+.kite-auth-form .flex-row:has(> .flex-grow):has(> .button, > a > .button) > .button.outline { order: 2; }
+.flow-heading > .flex-col { align-items: stretch; }
 .kite-method-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .kite-method-choice { display: flex; align-items: center; gap: 8px; padding: 14px 10px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 12px; }
 .kite-method-choice.selected { background: var(--muted); border-color: var(--ring); }

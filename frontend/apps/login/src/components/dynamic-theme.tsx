@@ -21,7 +21,7 @@ export function DynamicTheme({
   const parts = Children.toArray(actualChildren);
   const symbol = pathname.includes("passkey")
     ? "Fingerprint"
-    : pathname.includes("authenticator") || pathname.includes("mfa") || pathname.includes("otp")
+    : pathname.includes("authenticator") || pathname.includes("mfa") || pathname.includes("otp") || pathname.includes("u2f")
       ? "ShieldCheck"
       : pathname.includes("verify")
         ? pathname.includes("success")

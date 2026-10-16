@@ -659,8 +659,8 @@ export function KiteAccount({ data, section }: { data: AccountOverview; section:
                         {date(device.createdAt)}
                       </>,
                       current ? (
-                        <Link className="text-button muted" href="/logout">
-                          {text("退出", "Sign out")}
+                        <Link className="button outline" href="/logout">
+                          {text("退出登录", "Sign out")}
                         </Link>
                       ) : (
                         button(text("退出登录", "Sign out"), () =>
