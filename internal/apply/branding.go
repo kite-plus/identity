@@ -42,6 +42,21 @@ func (a *Applier) smtp(ctx context.Context) error {
 		}
 	}
 	pwHash := hash("smtp", c.Host, c.User, c.Password)
+	if id != "" && a.state.Hashes["smtp"] != pwHash {
+		// ZITADEL v4.19.4 never stores a changed SMTP password: the password
+		// event lacks the provider ID, and a config change carrying one fails
+		// its projection. Only a new provider takes a new password.
+		if state == "EMAIL_PROVIDER_ACTIVE" {
+			if err := a.call(ctx, http.MethodPost, "/admin/v1/email/"+id+"/_deactivate", "", obj{}, nil); err != nil {
+				return err
+			}
+		}
+		if err := a.call(ctx, http.MethodDelete, "/admin/v1/email/"+id, "", nil, nil); err != nil {
+			return err
+		}
+		a.changed("smtp provider %q removed to take a new password", c.Description)
+		id, state = "", ""
+	}
 	if id == "" {
 		in := merged(want, obj{"password": c.Password})
 		var out obj
@@ -51,20 +66,11 @@ func (a *Applier) smtp(ctx context.Context) error {
 		id = str(out, "id")
 		a.state.Hashes["smtp"] = pwHash
 		a.changed("smtp provider %q created", c.Description)
-	} else {
-		if d := diff(want, have); len(d) > 0 {
-			if err := a.call(ctx, http.MethodPut, "/admin/v1/email/smtp/"+id, "", want, nil); err != nil {
-				return err
-			}
-			a.changed("smtp provider %v", d)
+	} else if d := diff(want, have); len(d) > 0 {
+		if err := a.call(ctx, http.MethodPut, "/admin/v1/email/smtp/"+id, "", want, nil); err != nil {
+			return err
 		}
-		if a.state.Hashes["smtp"] != pwHash {
-			if err := a.call(ctx, http.MethodPut, "/admin/v1/email/smtp/"+id+"/password", "", obj{"password": c.Password}, nil); err != nil {
-				return err
-			}
-			a.state.Hashes["smtp"] = pwHash
-			a.changed("smtp password")
-		}
+		a.changed("smtp provider %v", d)
 	}
 	if state != "EMAIL_PROVIDER_ACTIVE" {
 		if err := a.call(ctx, http.MethodPost, "/admin/v1/email/"+id+"/_activate", "", obj{}, nil); err != nil {
