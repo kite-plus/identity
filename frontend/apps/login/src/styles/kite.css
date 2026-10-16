@@ -345,7 +345,8 @@ h3 { font-size: 14px; font-weight: 600; }
 .kite-auth-form .flex-row:has(> .flex-grow):has(> .button, > a > .button) > a { display: block; }
 .kite-auth-form .flex-row:has(> .flex-grow):has(> .button, > a > .button) .button { width: 100%; }
 .kite-auth-form .flex-row:has(> .flex-grow):has(> .button, > a > .button) > .button.outline { order: 2; }
-.flow-heading > .flex-col { align-items: stretch; }
+.flow-heading > .flex-col { align-items: stretch; gap: 6px; }
+.flow-heading .identity-chip { margin: 14px 0 0; }
 .kite-method-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .kite-method-choice { display: flex; align-items: center; gap: 8px; padding: 14px 10px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 12px; }
 .kite-method-choice.selected { background: var(--muted); border-color: var(--ring); }
