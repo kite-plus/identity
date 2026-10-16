@@ -9,6 +9,13 @@ export default async function Page({
 }) {
   const params = await searchParams;
   const zh = (await getLocale()) === "zh";
+  // The reset page never says whether an account exists, so this is where
+  // a reader without one (often an old Explore password account) learns why.
+  const email = params.loginName?.includes("@") ? params.loginName : undefined;
+  const signUp = new URLSearchParams();
+  if (email) signUp.set("email", email);
+  if (params.organization) signUp.set("organization", params.organization);
+  if (params.requestId) signUp.set("requestId", params.requestId);
   return (
     <KiteAuthFrame>
       <section className="auth-card">
@@ -27,6 +34,26 @@ export default async function Page({
           </Link>
           <Link className="button full-width outline" href={`/password/forgot?${new URLSearchParams(params)}`}>
             {zh ? "重新发送或更换账号" : "Resend or use another account"}
+          </Link>
+        </div>
+        <div className="reset-help">
+          <h2>{zh ? "没有收到邮件？" : "No email?"}</h2>
+          <ul>
+            <li>{zh ? "看看垃圾邮件箱，邮件可能要等一两分钟。" : "Check your spam folder; it can take a minute or two."}</li>
+            <li>
+              {zh
+                ? "这个邮箱可能还没有 Kite Plus 账号。以前在 Explore 用密码注册的读者，用同一个邮箱注册 Kite Plus 账号，再登录 Explore，订阅都还在。"
+                : "This email may not have a Kite Plus account yet. If you signed up on Explore with a password, sign up here with the same email, then sign in to Explore: your follows are still there."}
+            </li>
+          </ul>
+          <Link className="text-button" href={`/register?${signUp}`}>
+            {email
+              ? zh
+                ? "用这个邮箱注册"
+                : "Sign up with this email"
+              : zh
+                ? "注册 Kite Plus 账号"
+                : "Create a Kite Plus account"}
           </Link>
         </div>
       </section>
